@@ -1,0 +1,83 @@
+---
+title: "Building a BTC Implied-Volatility Surface Proxy"
+slug: "btc-vol-surface"
+description: "An investigation into constructing a parsimonious implied-volatility surface from limited market observables such as ATM volatility, 25-delta risk reversals, and butterflies, then evaluating the proxy against Deribit option quotes."
+question: "How much of a full crypto volatility surface can three quoted structures reconstruct?"
+year: 2026
+date: "2026-05-01"
+status: "ongoing"
+role: "Sole researcher"
+domains: ["markets", "mathematics"]
+methods: ["statistical-inference", "optimization", "valuation"]
+tags: ["volatility", "options", "bitcoin", "svi", "vanna-volga", "derivatives"]
+featured: true
+order: 1
+coverVariant: "vol-surface"
+related:
+  [
+    "notes/realized-vs-implied-volatility",
+    "notes/fitting-iv-surface-atm-rr-bf",
+    "work/market-making-bot",
+  ]
+---
+
+## Abstract
+
+Institutional FX desks summarize an entire volatility smile with three
+numbers: at-the-money volatility, a 25-delta risk reversal, and a 25-delta
+butterfly. Crypto options markets quote the same structures, but with
+thinner liquidity and 24/7 microstructure noise. This project asks whether
+those three observables, plus a sensible interpolation model, are enough to
+reconstruct a usable BTC implied-volatility surface — and where the
+reconstruction breaks.
+
+<Callout kind="note">
+  Case study in preparation. The sections below describe the approach and current state;
+  quantitative results will be added once the evaluation against Deribit quotes is
+  complete.
+</Callout>
+
+## Context
+
+A full options surface is a function $\sigma(K, T)$ over strike and expiry.
+Quoting desks compress each expiry's smile into three structures:
+
+$$
+\mathrm{RR}_{25} = \sigma_{25C} - \sigma_{25P}, \qquad
+\mathrm{BF}_{25} = \tfrac{1}{2}\left(\sigma_{25C} + \sigma_{25P}\right) - \sigma_{\mathrm{ATM}}
+$$
+
+The risk reversal measures the smile's skew; the butterfly measures its
+convexity.<MarginNote index={1}>In BTC these have a physical
+interpretation too: persistent demand for downside puts shows up as a
+negative risk reversal in stress regimes.</MarginNote> The question is what
+gets lost in this compression — and whether the standard reconstruction
+machinery (Vanna–Volga adjustments, SVI and SSVI parameterizations) that
+grew up around FX transfers to a market with jumps, funding quirks, and
+inverse-contract conventions.
+
+## Method
+
+1. **Recover the three anchor points** per expiry from quoted structures,
+   converting between delta and strike space under the market's convention.
+2. **Interpolate the smile** three ways and compare: Vanna–Volga
+   (replication-based, three-instrument exact fit), raw SVI per expiry, and
+   surface-level SSVI with calendar no-arbitrage constraints.
+3. **Evaluate** each proxy against the full Deribit strike ladder that the
+   compression discarded, checking both pricing error and no-arbitrage
+   violations (butterfly and calendar).
+
+## What exists today
+
+- Data collection for Deribit quotes and structure extraction.
+- SVI per-expiry calibration with penalty terms for butterfly arbitrage.
+- Vanna–Volga pricer for the 25-delta triangle.
+
+Cross-model evaluation and the write-up are in progress.
+
+## What I would do next
+
+Extend the comparison across regimes (calm vs. stressed weeks), and test
+whether the butterfly quote adds measurable information over a two-point
+(ATM + RR) reconstruction — a model-selection question as much as a
+markets one.

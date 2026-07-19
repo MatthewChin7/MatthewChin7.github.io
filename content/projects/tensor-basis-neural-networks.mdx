@@ -1,0 +1,73 @@
+---
+title: "Rotation-Invariant Constitutive Modeling with Tensor-Basis Neural Networks"
+slug: "tensor-basis-neural-networks"
+description: "Research into rotation-invariant neural constitutive models using tensor-basis representations and statistical model comparison against simulated constitutive laws."
+question: "When a neural constitutive model must respect physics, how much data does the symmetry save?"
+year: 2025
+date: "2025-11-01"
+status: "research"
+role: "Researcher"
+domains: ["machine-learning", "physical-systems", "mathematics"]
+methods: ["machine-learning", "statistical-inference", "simulation"]
+tags:
+  [
+    "tensor-basis",
+    "neural-networks",
+    "constitutive-models",
+    "invariance",
+    "model-selection",
+  ]
+featured: true
+order: 3
+coverVariant: "tensor"
+related: ["notes/what-tbnn-enforce", "notes/models-from-imperfect-data"]
+---
+
+## Abstract
+
+A constitutive model maps deformation to stress. Physics requires the map
+to be objective: rotate the material frame and the prediction must rotate
+with it. Tensor-basis neural networks (TBNNs) build this in by
+construction — the network outputs coefficients on an integrity basis of
+tensors rather than raw stress components. This project studies what that
+architectural constraint buys, using simulated constitutive laws where
+ground truth is known, and compares candidate models with statistical
+criteria (BIC, KL divergence) rather than test loss alone.
+
+<Callout kind="note">
+  Case study in preparation. The framing below is stable; comparative results will be
+  published with the write-up.
+</Callout>
+
+## The representation
+
+For an isotropic function of a symmetric tensor $\mathbf{A}$, the
+representation theorem gives
+
+$$
+\mathbf{T} = g_0 \mathbf{I} + g_1 \mathbf{A} + g_2 \mathbf{A}^2,
+\qquad g_i = g_i\!\left(\operatorname{tr}\mathbf{A},\ \operatorname{tr}\mathbf{A}^2,\ \operatorname{tr}\mathbf{A}^3\right)
+$$
+
+so a network need only learn three scalar functions of three invariants —
+a drastic reduction from learning six independent stress components as
+unconstrained functions of six strain components.<MarginNote index={1}>
+This is the same structure Ling, Kurzawski & Templeton (2016) used for
+Reynolds-stress closures; the constitutive-model setting makes the
+statistical comparison cleaner because the ground truth can be
+simulated.</MarginNote>
+
+## Questions under study
+
+1. **Sample efficiency** — how does the invariant architecture's error
+   scale with training-set size versus an unconstrained MLP?
+2. **Model comparison** — do BIC and KL-based criteria, computed against
+   simulated laws, select the physically correct structure when test loss
+   ties?
+3. **Misspecification** — what happens when the true law is _not_ in the
+   assumed function class (e.g. mild anisotropy)?
+
+## What I would do next
+
+Extend from synthetic laws to published experimental datasets, where the
+noise model itself becomes a modeling decision.

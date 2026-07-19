@@ -1,0 +1,1 @@
+PLACEHOLDER - replace with the real resume PDF (upload via /admin locally or overwrite public/resume.pdf).

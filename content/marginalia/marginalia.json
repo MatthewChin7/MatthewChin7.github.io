@@ -1,0 +1,75 @@
+[
+  {
+    "id": "m-2026-07-01",
+    "slug": "liquidity-is-a-state-variable",
+    "date": "2026-07-01",
+    "title": "Liquidity is a state variable",
+    "body": "Sample entry. We model prices as the state and liquidity as friction. But in stressed markets the causality flips: liquidity is the state, and price is just where it happens to be measured.",
+    "tags": ["markets", "microstructure"],
+    "type": "observation",
+    "related": ["work/market-making-bot"]
+  },
+  {
+    "id": "m-2026-06-18",
+    "slug": "what-counts-as-one-observation",
+    "date": "2026-06-18",
+    "body": "Sample entry. The hardest question in every applied statistics problem I've touched: what counts as one observation? Hourly pollution readings from neighboring stations are not two data points. Neither, probably, are two days of BTC returns.",
+    "tags": ["statistical-inference", "modeling"],
+    "type": "question",
+    "related": ["work/hk-pollution-dispersion"]
+  },
+  {
+    "id": "m-2026-06-05",
+    "slug": "symmetry-as-prior",
+    "date": "2026-06-05",
+    "title": "Symmetry as prior",
+    "body": "Sample entry. An invariance constraint is an infinitely strong prior. The interesting engineering question is never whether to impose it, but what evidence would make you regret it.",
+    "tags": ["invariance", "machine-learning"],
+    "type": "mathematics",
+    "related": ["work/tensor-basis-neural-networks"]
+  },
+  {
+    "id": "m-2026-05-22",
+    "slug": "kill-switch-first",
+    "date": "2026-05-22",
+    "body": "Sample entry. Build the kill switch before the strategy. Systems reveal their real architecture in the order you build their safeguards.",
+    "tags": ["trading", "engineering"],
+    "type": "building",
+    "related": ["work/market-making-bot"]
+  },
+  {
+    "id": "m-2026-05-02",
+    "slug": "maps-and-territories",
+    "date": "2026-05-02",
+    "body": "Sample entry. A calibrated model is a map that admits it will be redrawn tomorrow. A forecast is a map that bets the territory holds still. Most modeling arguments are two people holding different kinds of maps.",
+    "tags": ["modeling", "philosophy-of-models"],
+    "type": "observation",
+    "related": ["notes/fitting-markets-vs-forecasting-reality"]
+  },
+  {
+    "id": "m-2026-04-15",
+    "slug": "wind-through-a-city",
+    "date": "2026-04-15",
+    "body": "Sample entry. Watching wind data move through Hong Kong's terrain model: the city is a lens. The same synoptic wind arrives as a dozen different local flows depending on which valley bends it.",
+    "tags": ["fluid-dynamics", "environment"],
+    "type": "observation",
+    "related": ["work/hk-pollution-dispersion"]
+  },
+  {
+    "id": "m-2026-03-28",
+    "slug": "question-for-agent-models",
+    "date": "2026-03-28",
+    "body": "Sample entry. If every agent in a market simulation follows a rule fitted to data from markets full of humans, what exactly is the simulation a model of?",
+    "tags": ["complex-systems", "agent-based-models"],
+    "type": "question"
+  },
+  {
+    "id": "m-2026-03-10",
+    "slug": "notation-debt",
+    "date": "2026-03-10",
+    "title": "Notation debt",
+    "body": "Sample entry. Bad notation compounds like bad code. Every subscript you overload today is an off-by-one error in a derivation six weeks from now.",
+    "tags": ["mathematics", "writing"],
+    "type": "personal"
+  }
+]

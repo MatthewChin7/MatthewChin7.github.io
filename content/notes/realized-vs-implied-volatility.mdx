@@ -1,0 +1,75 @@
+---
+title: "Why Realized Volatility Is Not ATM Implied Volatility"
+slug: "realized-vs-implied-volatility"
+description: "The two numbers get used interchangeably in casual conversation. They answer different questions, are measured under different probabilities, and disagree for structural reasons."
+date: "2026-04-12"
+type: "explainer"
+domains: ["markets", "mathematics"]
+tags: ["volatility", "options", "variance-risk-premium", "derivatives"]
+series: "Volatility, Observed"
+seriesOrder: 1
+featured: true
+related: ["work/btc-vol-surface", "notes/fitting-iv-surface-atm-rr-bf"]
+---
+
+Traders quote both in the same units — annualized percent — which invites
+treating them as two estimates of one quantity. They are not. Realized
+volatility is a backward-looking sample statistic; implied volatility is a
+forward-looking price. The gap between them is not an error to be
+arbitraged away by better measurement; it is itself a traded risk premium.
+
+## Two different objects
+
+Realized volatility over a window of $n$ daily returns is a statistic:
+
+$$
+\widehat{\sigma}_{\mathrm{RV}} = \sqrt{\frac{252}{n}\sum_{i=1}^{n} r_i^2}
+$$
+
+It answers: _how much did this asset actually move?_ Its only randomness
+is sampling error, and you can shrink that with higher-frequency data
+(up to the point where microstructure noise bites back).
+
+ATM implied volatility is the number you feed into Black–Scholes to
+recover an option's market price. It answers a different question
+entirely: _what constant volatility makes the model agree with what
+people are paying?_ It is a price restated in volatility units — and
+prices embed risk preferences, hedging demand, and inventory, not just
+forecasts.
+
+<MarginNote index={1}>
+  This is the P-versus-Q distinction: realized vol lives under the physical measure,
+  implied vol under the risk-neutral one. Conflating them is a category error before it is
+  an empirical one.
+</MarginNote>
+
+## Why they disagree structurally
+
+If option sellers were risk-neutral statisticians, implied variance would
+equal expected realized variance. Empirically, index implied volatility
+sits above subsequent realized volatility most of the time. Sellers of
+volatility are short convexity in exactly the states where losses hurt
+most, and they charge for it. The difference — the variance risk premium
+— is compensation, not mispricing.
+
+Three further wedges keep the two numbers apart even in expectation:
+
+- **Horizon.** Implied vol is an expectation over the option's remaining
+  life; realized vol is measured over some past window. In a regime
+  change, they _should_ disagree.
+- **The smile.** "ATM implied vol" is one point on a curve. The rest of
+  the smile encodes skewness and kurtosis the single point discards; a
+  realized measure has no strike dimension at all.
+- **Jumps and gaps.** Close-to-close realized measures under-sample gap
+  risk; option prices cannot afford to.
+
+## The practical upshot
+
+Comparing this month's realized vol against today's implied vol tells you
+about the _current price of volatility risk_, not about which number is
+"right." A model that fits the implied surface can be flawless as a
+description of prices and useless as a forecast of movement — and vice
+versa. That distinction has its own note: fitting the market is not
+forecasting reality.
+
+<Reflection unresolved="How much of the variance risk premium in crypto options is preference-driven versus inventory-driven is, to me, still an open question — the dealer population is thinner than in index options, and it shows." />

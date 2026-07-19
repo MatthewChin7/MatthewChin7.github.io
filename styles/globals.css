@@ -1,0 +1,469 @@
+@import "tailwindcss";
+
+/* ————————————————————————————————————————————————————————————————
+   SIGNAL ARCHIVE · design tokens
+   Day = "Reading Room" · Night = "Night Lab"
+   ———————————————————————————————————————————————————————————————— */
+
+:root {
+  /* ground */
+  --bg: oklch(0.965 0.008 85);
+  --bg-elevated: oklch(0.985 0.006 85);
+  --surface: oklch(0.935 0.012 250);
+  --surface-strong: oklch(0.9 0.014 250);
+
+  /* ink */
+  --fg: oklch(0.24 0.012 270);
+  --muted: oklch(0.45 0.016 270);
+  --faint: oklch(0.51 0.015 270);
+
+  /* rules */
+  --rule: oklch(0.87 0.012 85);
+  --rule-strong: oklch(0.76 0.014 85);
+
+  /* signal + annotation */
+  --signal: oklch(0.46 0.19 262);
+  --signal-strong: oklch(0.4 0.2 262);
+  --signal-soft: oklch(0.46 0.19 262 / 0.09);
+  --annotation: oklch(0.55 0.19 35);
+
+  /* state */
+  --focus: oklch(0.46 0.19 262);
+  --selection: oklch(0.46 0.19 262 / 0.16);
+  --success: oklch(0.55 0.14 150);
+  --warning: oklch(0.68 0.14 80);
+  --error: oklch(0.53 0.19 25);
+
+  /* domain accents — quiet indexing marks only */
+  --d-markets: oklch(0.46 0.19 262);
+  --d-mathematics: oklch(0.48 0.16 300);
+  --d-machine-learning: oklch(0.52 0.11 195);
+  --d-physical-systems: oklch(0.55 0.17 40);
+  --d-startups: oklch(0.56 0.12 75);
+  --d-essays: oklch(0.42 0.02 270);
+
+  /* code block ground (shiki dual themes hook in below) */
+  --code-bg: oklch(0.945 0.01 85);
+
+  color-scheme: light;
+}
+
+[data-theme="night"] {
+  --bg: oklch(0.163 0.02 262);
+  --bg-elevated: oklch(0.19 0.022 262);
+  --surface: oklch(0.212 0.025 262);
+  --surface-strong: oklch(0.25 0.028 262);
+
+  --fg: oklch(0.92 0.015 85);
+  --muted: oklch(0.72 0.02 262);
+  --faint: oklch(0.67 0.022 262);
+
+  --rule: oklch(0.31 0.024 262);
+  --rule-strong: oklch(0.42 0.026 262);
+
+  --signal: oklch(0.68 0.17 262);
+  --signal-strong: oklch(0.76 0.15 262);
+  --signal-soft: oklch(0.68 0.17 262 / 0.13);
+  --annotation: oklch(0.78 0.13 75);
+
+  --focus: oklch(0.68 0.17 262);
+  --selection: oklch(0.68 0.17 262 / 0.24);
+  --success: oklch(0.72 0.13 150);
+  --warning: oklch(0.78 0.13 80);
+  --error: oklch(0.68 0.16 25);
+
+  --d-markets: oklch(0.68 0.17 262);
+  --d-mathematics: oklch(0.7 0.14 300);
+  --d-machine-learning: oklch(0.72 0.11 195);
+  --d-physical-systems: oklch(0.72 0.14 45);
+  --d-startups: oklch(0.75 0.11 80);
+  --d-essays: oklch(0.75 0.015 270);
+
+  --code-bg: oklch(0.185 0.022 262);
+
+  color-scheme: dark;
+}
+
+/* Map raw tokens into Tailwind's theme */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-signal: var(--signal);
+  --color-signal-strong: var(--signal-strong);
+  --color-signal-soft: var(--signal-soft);
+  --color-annotation: var(--annotation);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  --font-serif: var(--font-instrument-serif), "Georgia", serif;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+
+  --breakpoint-xs: 26rem;
+
+  --ease-plate: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* motion timing tokens */
+:root {
+  --t-micro: 140ms;
+  --t-comp: 220ms;
+  --t-section: 420ms;
+}
+
+/* ————————————————————————————————————————————————————————————————
+   Base
+   ———————————————————————————————————————————————————————————————— */
+
+html {
+  scroll-padding-top: 5.5rem;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--selection);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 1px;
+}
+
+/* keep focus reachable under the sticky header */
+[id] {
+  scroll-margin-top: 5.5rem;
+}
+
+/* ————————————————————————————————————————————————————————————————
+   Typography utilities
+   ———————————————————————————————————————————————————————————————— */
+
+@utility type-display-xl {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(2.625rem, 1.2rem + 5.4vw, 5.75rem);
+  line-height: 1.04;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+
+@utility type-display {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(1.9rem, 1.2rem + 2.2vw, 3.25rem);
+  line-height: 1.12;
+  letter-spacing: -0.008em;
+  text-wrap: balance;
+}
+
+@utility type-title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(1.45rem, 1.15rem + 1vw, 2rem);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+@utility type-mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@utility type-mono-meta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* editorial underline link */
+@utility link-editorial {
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  transition: text-decoration-color var(--t-micro) ease-out;
+  &:hover {
+    text-decoration-color: var(--signal);
+  }
+}
+
+/* featured notched corner — the one ornament */
+@utility notch-corner {
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+}
+
+/* fade-rise entrance (first screenful only; capped stagger) */
+@utility fade-rise {
+  animation: fade-rise 220ms ease-out both;
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ————————————————————————————————————————————————————————————————
+   Prose — long-form reading
+   ———————————————————————————————————————————————————————————————— */
+
+.prose {
+  max-width: 68ch;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+
+.prose > * + * {
+  margin-top: 1.25em;
+}
+
+.prose h2 {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  line-height: 1.25;
+  margin-top: 2.5em;
+  text-wrap: balance;
+}
+
+.prose h3 {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  line-height: 1.3;
+  margin-top: 2em;
+}
+
+.prose h2 + *,
+.prose h3 + * {
+  margin-top: 0.75em;
+}
+
+.prose a {
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 0.22em;
+  transition: text-decoration-color var(--t-micro) ease-out;
+}
+
+.prose a:hover {
+  text-decoration-color: var(--signal);
+}
+
+.prose strong {
+  font-weight: 600;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.5rem;
+}
+
+.prose ul {
+  list-style: none;
+}
+
+.prose ul > li {
+  position: relative;
+}
+
+.prose ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.25rem;
+  top: 0.72em;
+  width: 0.5rem;
+  height: 1px;
+  background: var(--annotation);
+}
+
+.prose ol {
+  list-style: decimal;
+}
+
+.prose ol > li::marker {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--muted);
+}
+
+.prose li + li {
+  margin-top: 0.4em;
+}
+
+.prose blockquote {
+  border-left: 1px solid var(--rule-strong);
+  padding-left: 1.25rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.prose hr {
+  border: 0;
+  height: 1px;
+  background: var(--rule);
+  margin-block: 3rem;
+  position: relative;
+}
+
+.prose code:not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+}
+
+.prose img,
+.prose svg,
+.prose video {
+  max-width: 100%;
+  height: auto;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.prose th {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  font-weight: 500;
+  color: var(--muted);
+  border-bottom: 1px solid var(--rule-strong);
+  padding: 0.5rem 0.75rem 0.5rem 0;
+}
+
+.prose td {
+  border-bottom: 1px solid var(--rule);
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  vertical-align: top;
+}
+
+/* code blocks (rehype-pretty-code output) */
+.prose pre {
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+
+.prose pre code {
+  font-family: var(--font-mono);
+  display: grid;
+}
+
+/* shiki dual theme: flip token colors at night */
+[data-theme="night"] .prose pre span {
+  color: var(--shiki-dark) !important;
+}
+
+/* KaTeX sizing */
+.prose .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.25rem;
+}
+
+/* ————————————————————————————————————————————————————————————————
+   Reduced motion — state changes become immediate
+   ———————————————————————————————————————————————————————————————— */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ————————————————————————————————————————————————————————————————
+   Print — résumé and articles
+   ———————————————————————————————————————————————————————————————— */
+
+@media print {
+  :root {
+    --bg: #fff;
+    --fg: #000;
+    --muted: #333;
+    --rule: #bbb;
+    --rule-strong: #888;
+    --signal: #000;
+    --annotation: #000;
+  }
+
+  header[data-site-header],
+  footer[data-site-footer],
+  [data-no-print] {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 10.5pt;
+    line-height: 1.5;
+  }
+
+  a {
+    color: #000;
+    text-decoration: none;
+  }
+
+  [data-print-url]::after {
+    content: " (" attr(href) ")";
+    font-size: 8.5pt;
+    color: #444;
+  }
+
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  section,
+  li {
+    break-inside: avoid;
+  }
+
+  @page {
+    margin: 1.6cm;
+  }
+}

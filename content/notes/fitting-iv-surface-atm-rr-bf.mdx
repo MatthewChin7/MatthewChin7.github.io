@@ -1,0 +1,28 @@
+---
+title: "Fitting an Implied-Volatility Surface from ATM, Risk Reversal, and Butterfly Quotes"
+slug: "fitting-iv-surface-atm-rr-bf"
+description: "From three quoted structures per expiry to a full smile: delta conventions, Vanna–Volga, SVI, and where each reconstruction leaks."
+date: "2026-05-20"
+type: "research-note"
+domains: ["markets", "mathematics"]
+tags: ["volatility", "options", "svi", "vanna-volga", "derivatives"]
+series: "Volatility, Observed"
+seriesOrder: 2
+draft: true
+related: ["work/btc-vol-surface", "notes/realized-vs-implied-volatility"]
+---
+
+<Callout kind="note">
+  Draft — being written alongside the BTC volatility-surface project. Outline below;
+  excluded from the published archive until complete.
+</Callout>
+
+Planned structure:
+
+1. What the three structures pin down (level, skew, convexity) and the
+   delta-convention traps in converting them to strike space.
+2. Vanna–Volga as replication: exact at three points, opinionated
+   everywhere else.
+3. SVI and SSVI: parameterization, no-arbitrage constraints, calibration
+   practice.
+4. Empirical comparison against full Deribit strike ladders.

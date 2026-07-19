@@ -1,0 +1,55 @@
+---
+title: "A Market-Making and Derivatives-Pricing Bot"
+slug: "market-making-bot"
+description: "A Python trading system combining market making, derivatives pricing, and risk controls, developed for a live trading competition."
+question: "How do you quote two-sided markets continuously without being picked off?"
+year: 2025
+date: "2025-04-01"
+status: "complete"
+role: "Designer and implementer"
+domains: ["markets"]
+methods: ["market-microstructure", "valuation", "software-engineering"]
+tags: ["market-making", "options", "microstructure", "python", "trading"]
+featured: true
+order: 4
+coverVariant: "orderbook"
+related: ["work/btc-vol-surface", "notes/fitting-markets-vs-forecasting-reality"]
+---
+
+## Abstract
+
+Built for a live trading competition: a Python system that quoted
+two-sided markets in several instruments, priced derivatives off its own
+mid estimates, and enforced position and loss limits mechanically. The
+interesting engineering was not the pricing formulas but the plumbing —
+staying responsive while the exchange feed, the pricing loop, and the
+risk checks all wanted the same milliseconds.
+
+## Architecture
+
+- **Feed handler** — normalizes exchange messages into an internal book.
+- **Fair-value engine** — mid estimates blended from book imbalance and
+  recent trades; derivatives priced off those mids rather than last trades.
+- **Quoter** — spreads set from inventory and recent volatility; quotes
+  widen mechanically as position accumulates (a standard
+  inventory-control policy in the spirit of Avellaneda–Stoikov).
+- **Risk layer** — hard position caps and a kill switch that pulls all
+  quotes; the one component allowed to interrupt every other.
+
+<Callout kind="idea">
+  A market maker's edge is mostly the discipline of its exits: the system design question
+  is "what turns quoting off?", not "what turns it on?"
+</Callout>
+
+## What failed or changed
+
+Early versions re-priced on every book tick and fell behind during bursts;
+batching repricing onto a fixed cadence made behavior predictable under
+load. Adverse selection was the persistent tax: naive symmetric quotes
+around a stale mid get hit precisely when the mid is most wrong.
+
+## What I would do next
+
+Replace the hand-tuned spread policy with one calibrated from the
+competition's own fill data, and measure the adverse-selection cost per
+fill directly.

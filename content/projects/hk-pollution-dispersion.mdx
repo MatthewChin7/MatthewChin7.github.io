@@ -1,0 +1,68 @@
+---
+title: "Modeling Pollution Dispersion Across Hong Kong"
+slug: "hk-pollution-dispersion"
+description: "An hourly spatial model combining an advection-diffusion formulation with pollution measurements, meteorological data, and GIS layers to study pollution dispersion across Hong Kong at roughly 500-meter resolution."
+question: "Can a physically grounded advection–diffusion model explain hourly pollution fields over dense, mountainous terrain?"
+year: 2025
+date: "2025-09-01"
+status: "research"
+role: "Researcher"
+domains: ["physical-systems", "mathematics"]
+methods: ["pde", "simulation", "data-engineering"]
+tags: ["pde", "advection-diffusion", "fluid-dynamics", "gis", "environment"]
+featured: true
+order: 2
+coverVariant: "advection"
+related: ["notes/models-from-imperfect-data"]
+---
+
+## Abstract
+
+Hong Kong's pollution field is shaped by wind funneled through steep
+terrain, dense street canyons, and marine boundary effects. This project
+builds an hourly spatial model of pollutant concentration on a grid of
+roughly 500-meter resolution, driven by an advection–diffusion equation
+and constrained by monitoring-station measurements, meteorological data,
+and GIS layers.
+
+<Callout kind="note">
+  Case study in preparation. Methodology below is current; results and validation figures
+  will be added when the analysis is finalized.
+</Callout>
+
+## The physical model
+
+The concentration field $c(x, y, t)$ evolves under
+
+$$
+\frac{\partial c}{\partial t}
+  + \mathbf{u}\cdot\nabla c
+  = \nabla\cdot\left(K\,\nabla c\right) + S - \lambda c
+$$
+
+where $\mathbf{u}$ is the horizontal wind field, $K$ an eddy-diffusivity
+tensor, $S$ emission sources, and $\lambda$ a first-order removal
+term.<MarginNote index={1}>The interesting modeling decisions are all in
+what this equation hides: vertical mixing collapsed into $K$, chemistry
+collapsed into $\lambda$.</MarginNote>
+
+## Data
+
+- Hourly measurements from Hong Kong's air-quality monitoring network.
+- Meteorological reanalysis and station wind fields, interpolated to the grid.
+- GIS layers — terrain elevation, land use, road density — informing the
+  source term and local diffusivity.
+
+## Method
+
+Finite-volume discretization on the 500 m grid with upwinding for the
+advective term; source and diffusivity parameters fit against held-out
+stations rather than assumed. The honest difficulty is identifiability:
+with tens of stations and thousands of cells, the data cannot pin down a
+full parameter field, so the parameterization must stay low-dimensional.
+
+## What I would do next
+
+Compare the physical model against a purely statistical interpolator
+(kriging with meteorological covariates) on identical held-out stations —
+the cleanest test of whether the physics earns its complexity.
