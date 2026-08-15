@@ -104,23 +104,30 @@ test.describe("archive interactions", () => {
     await expect(page.locator("[data-engagement]")).toBeVisible();
   });
 
-  test("likes and comments persist in the browser", async ({ page }) => {
+  test("the discussion section never offers a box that goes nowhere", async ({
+    page,
+  }) => {
     const { link, count } = await firstIn(page, "/notes", "/notes/");
     test.skip(count === 0, "nothing published under /notes");
     await link.click();
-    const engagement = page.locator("[data-engagement]");
-    const like = engagement.getByRole("button", { name: "Like", exact: true });
-    await like.click();
-    await expect(engagement.getByText("1 like", { exact: true })).toBeVisible();
 
-    await engagement.getByLabel("Name (optional)").fill("Test Reader");
-    await engagement.getByLabel("Comment").fill("A useful review.");
-    await engagement.getByRole("button", { name: "Post comment" }).click();
-    await expect(engagement.getByText("A useful review.", { exact: true })).toBeVisible();
+    const panel = page.locator("[data-engagement]");
+    await expect(panel).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Share" })).toBeVisible();
 
-    await page.reload();
-    await expect(page.getByText("A useful review.", { exact: true })).toBeVisible();
-    await expect(page.getByText("1 like", { exact: true })).toBeVisible();
+    // Comments live in GitHub Discussions via giscus. Until that is
+    // configured the section renders nothing — what must never come back is
+    // the old local form, which looked like a conversation and stored every
+    // comment in the one browser that typed it.
+    const thread = panel.locator("[data-comments]");
+    if ((await thread.count()) > 0) {
+      await expect(
+        panel.locator("iframe.giscus-frame, [data-comments] iframe"),
+      ).toBeAttached({ timeout: 15_000 });
+    } else {
+      await expect(panel.getByRole("textbox")).toHaveCount(0);
+      await expect(panel.getByRole("button", { name: /post comment/i })).toHaveCount(0);
+    }
   });
 
   test("notes and work pages include the engagement panel", async ({ page }) => {

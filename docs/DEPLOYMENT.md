@@ -197,20 +197,60 @@ named directories and `.mdx` files only — so it never reaches the site.
 
 ---
 
-## 6. Optional: comments and real records
+## 6. Comments — GitHub Discussions via giscus
 
-Neither is wired, and neither can be Pages alone.
+Comments and likes used to live in `localStorage`, so every reader saw only
+their own: a comment section that looked like a conversation and could never
+be one. They now go through **giscus**, which stores each thread as a
+Discussion in this repository. Nothing new to host — the repo is the database,
+same as for content.
 
-**Comments — Giscus.** Stores each thread as a GitHub Discussion. Enable
-Discussions on the repo, install the Giscus app, get `repoId`/`categoryId` from
-[giscus.app](https://giscus.app), and drop a small client island into posts.
-The current `EngagementPanel` keeps likes and comments in the visitor's own
-`localStorage` — a placeholder, not shared between people.
+Reactions on the thread replace the old Like button. They are counted per
+GitHub account, so the number means something.
 
-**Arbitrary data — Supabase.** For global like counts, a subscriber list, or
-contact-form storage you need a real database with a REST API; the static
-frontend calls it directly with the public anon key. This is the piece that
-genuinely cannot be GitHub Pages.
+### What is already done
 
-Both need accounts that only you can create. Point me at them and I'll wire
-either one.
+`site.comments` in `lib/site/config.ts` carries the repository and its
+`repoId` (`R_kgDOTdB8vg`, the repo's GraphQL node id). The component, the
+theme sync and the tests are in place. **The comment section does not render
+at all** until `categoryId` is filled in — a box that cannot store a comment
+is worse than no box.
+
+### The four steps only you can do
+
+1. **Settings → General → Features → tick Discussions.**
+2. In the new **Discussions** tab, create a category called **Comments**.
+   Give it the **Announcement** format, so only you can start a thread and
+   readers can only reply — giscus creates the per-post threads itself.
+3. Install the **giscus app** on this repository:
+   <https://github.com/apps/giscus>.
+4. Open <https://giscus.app>, enter `MatthewChin7/MatthewChin7.github.io`,
+   pick the **Comments** category, and copy the `data-category-id` value out
+   of the generated snippet. Paste it into `categoryId` in
+   `lib/site/config.ts`, then commit.
+
+After the next deploy every post, project, musing, video and book review
+carries a working thread. Threads are keyed by content id (`notes/<slug>`),
+not by URL, so renaming or moving a post keeps its comments.
+
+### What this costs you
+
+- Readers need a GitHub account to comment. For this audience that is a fair
+  trade for zero infrastructure and zero spam handling; if it ever stops being
+  one, the alternative is a hosted database (below).
+- Moderation happens in the Discussions tab — deleting there removes the
+  comment from the site.
+
+---
+
+## 7. If you ever outgrow it — a real database
+
+For things Discussions cannot model — a global like counter with no sign-in, a
+subscriber list, contact-form storage — you need a database the browser can
+talk to directly. **Supabase** (hosted Postgres, free tier, REST/JS API,
+row-level security) is the usual answer, and the static frontend calls it with
+its public anon key.
+
+This is the piece that genuinely cannot be GitHub Pages. It needs an account
+only you can create; point me at a project and I will wire the client and the
+schema.

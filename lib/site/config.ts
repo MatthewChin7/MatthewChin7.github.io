@@ -23,6 +23,23 @@ export const site = {
   },
   /** Optional analytics — off unless a provider is configured. */
   analytics: null as null | { provider: "plausible"; domain: string },
+  /**
+   * Comments, via giscus — each thread is a GitHub Discussion in this repo,
+   * so they are shared between everyone rather than kept in one browser.
+   *
+   * `repoId` is the repository's GraphQL node id, read from the GitHub API.
+   * `categoryId` can only be produced once Discussions are enabled and the
+   * category exists; until it is filled in the comment section does not
+   * render at all, rather than showing a box that quietly goes nowhere.
+   * See docs/DEPLOYMENT.md § 6 for the four steps.
+   */
+  comments: {
+    repo: "MatthewChin7/MatthewChin7.github.io",
+    repoId: "R_kgDOTdB8vg",
+    category: "Comments",
+    // TODO(matthew): paste the category id from https://giscus.app
+    categoryId: "",
+  },
 } as const;
 
 export type SectionId =

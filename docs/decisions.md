@@ -144,3 +144,14 @@
   schema frontmatter with a required field missing and was rejected for
   something the author never touched. `saveItem` now folds the body back in
   before validating.
+- **D-031 Comments are GitHub Discussions, not browser storage.** The
+  engagement panel kept likes and comments in `localStorage`, so each reader
+  saw only their own — the form implied a conversation the site could not
+  hold. giscus stores each thread as a Discussion in this repository, which
+  keeps the "the repo is the database" model already used for content and
+  adds no service to run. Threads key on the content id rather than the URL,
+  so a renamed post keeps its comments; thread reactions replace the Like
+  button, since they are counted per account. The cost is that commenting
+  requires a GitHub account. Until `site.comments.categoryId` is set the
+  section renders nothing at all: a box that cannot store a comment is worse
+  than no box, and an e2e test holds that line.
