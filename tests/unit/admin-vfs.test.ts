@@ -252,3 +252,32 @@ describe("the store over a memory filesystem", () => {
     expect(store.publicUrl("public/books/x.jpg")).toBe("/books/x.jpg");
   });
 });
+
+/**
+ * JSON-backed kinds keep their prose inside the record. readItem lifts it out
+ * into `body`, so anything that re-saves what readItem returned has to put it
+ * back — otherwise publishing a musing fails validation on a field the author
+ * never touched.
+ */
+describe("json-backed kinds round-trip their body", () => {
+  const musing = {
+    id: "m-1",
+    slug: "m-one",
+    date: "2026-08-15",
+    body: "A thought.",
+    type: "observation",
+    draft: true,
+  };
+
+  it("publishes, duplicates and restores a musing", () => {
+    const store = createStore(new MemoryVfs());
+    expect(store.saveItem("musing", "m-one", musing, "A thought.").ok).toBe(true);
+    expect(store.setDraft("musing", "m-one", false).ok).toBe(true);
+    expect(store.readItem("musing", "m-one")?.body).toBe("A thought.");
+    expect(store.duplicateItem("musing", "m-one").ok).toBe(true);
+    const del = store.deleteItem("musing", "m-one");
+    expect(del.ok).toBe(true);
+    expect(store.restoreTrash(store.listTrash()[0]!.id).ok).toBe(true);
+    expect(store.readItem("musing", "m-one")?.body).toBe("A thought.");
+  });
+});

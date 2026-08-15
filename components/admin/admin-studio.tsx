@@ -671,8 +671,21 @@ export function AdminStudio({
   return (
     <div className="wp-admin">
       <div className="wpa-bar">
-        <Link href="/" target="_blank" rel="noreferrer">
+        {/* The studio's own home, not the site's: from deep in an editor the
+            wordmark is the obvious way back to the dashboard. Visiting the
+            public site is a separate, explicit link. */}
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(null);
+            setLatexTarget(null);
+            setScreen("dashboard");
+          }}
+        >
           <span aria-hidden>◈</span> {data.site.name}
+        </button>
+        <Link href="/" target="_blank" rel="noreferrer">
+          View site ↗
         </Link>
         <button
           type="button"
@@ -692,9 +705,7 @@ export function AdminStudio({
             disabled={publishing}
             title={pending.join("\n")}
           >
-            {publishing
-              ? "Publishing…"
-              : `Publish ${pending.length} change${pending.length === 1 ? "" : "s"}`}
+            {publishing ? "Publishing…" : `Publish to site · ${pending.length}`}
           </button>
         ) : null}
         <span className="wpa-bar-env">
@@ -905,7 +916,7 @@ function Dashboard({
               <thead>
                 <tr>
                   <th>Type</th>
-                  <th style={{ textAlign: "right" }}>Published</th>
+                  <th style={{ textAlign: "right" }}>Status</th>
                   <th style={{ textAlign: "right" }}>Drafts</th>
                 </tr>
               </thead>
@@ -1195,7 +1206,7 @@ function Library({
               className={`wpa-btn wpa-btn-sm${status === s ? " is-on" : ""}`}
               onClick={() => setStatus(s)}
             >
-              {s === "all" ? "Any status" : s === "draft" ? "Drafts" : "Published"}
+              {s === "all" ? "Any status" : s === "draft" ? "Drafts" : "Live"}
             </button>
           ))}
         </div>
@@ -1222,7 +1233,7 @@ function Library({
             disabled={busy}
             onClick={() => void runBulk("publish")}
           >
-            Publish
+            Make live
           </button>
           <button
             className="wpa-btn wpa-btn-sm"
@@ -1316,7 +1327,7 @@ function Library({
                         void single(item, item.draft ? "publish" : "unpublish")
                       }
                     >
-                      {item.draft ? "Publish" : "Move to draft"}
+                      {item.draft ? "Make live" : "Move to draft"}
                     </button>
                     <span>|</span>
                     <button onClick={() => void single(item, "duplicate")}>
@@ -1344,7 +1355,7 @@ function Library({
                   <span
                     className={`wpa-pill ${item.draft ? "wpa-pill-draft" : "wpa-pill-published"}`}
                   >
-                    {item.draft ? "Draft" : "Published"}
+                    {item.draft ? "Draft" : "Live"}
                   </span>
                 </td>
                 <td>{item.date ? fmt(item.date) : "—"}</td>
@@ -1505,7 +1516,17 @@ function ItemEditor({
     setFrontmatter(data);
     setSlug(effectiveSlug);
     setDirty(false);
-    onSaved(`Saved → ${json.path}`);
+    // Two things stand between a save and a reader seeing it: the item has to
+    // be live, and the batch has to go to the site. Say which one is missing
+    // rather than leaving "Saved" to imply the work is done.
+    const nowDraft = Boolean(data.draft);
+    onSaved(
+      studioMode === "github"
+        ? nowDraft
+          ? `Saved → ${json.path} · still a draft, so it stays off the site.`
+          : `Saved → ${json.path} · press “Publish to site” to deploy it.`
+        : `Saved → ${json.path}`,
+    );
   };
 
   const remove = async () => {
@@ -1653,7 +1674,7 @@ function ItemEditor({
             <div className="wpa-box-head">Save</div>
             <div className="wpa-box-body wpa-stack">
               <p className="wpa-muted">
-                {isDraft ? "Draft" : "Published"}
+                {isDraft ? "Draft" : "Live"}
                 {dirty ? " · unsaved changes" : ""}
               </p>
               <div className="wpa-actions">
@@ -1666,7 +1687,7 @@ function ItemEditor({
                     disabled={busy}
                     onClick={() => void save(true)}
                   >
-                    Publish
+                    Save &amp; make live
                   </button>
                 ) : (
                   <button

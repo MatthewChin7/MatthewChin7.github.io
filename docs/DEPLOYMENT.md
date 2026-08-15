@@ -103,12 +103,23 @@ expiry, and if a machine is lost, revoke it on GitHub — that alone is enough,
 since nothing else grants access. Use _Disconnect_ in the admin bar to clear it
 from a browser.
 
-### Publishing is a separate step
+### Two different things are called publishing
 
-Saving does **not** deploy. Edits accumulate in the tab's working copy, and the
-admin bar shows `Publish N changes`; that button sends the whole batch as a
-single commit, so a session of tidying costs one rebuild rather than one per
-edit. Deleting five posts is one deploy, not five.
+Getting something in front of a reader takes two independent steps, and it is
+worth keeping them apart:
+
+|                     | What it means                                                                                           | Where                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Draft → Live**    | This item is finished enough to show. New items start as drafts, and drafts never render in production. | _Save & make live_ in the editor, _Make live_ in the library (works on a multi-item selection) |
+| **Publish to site** | Ship everything written so far to the repository, which rebuilds and redeploys.                         | `Publish to site · N` in the admin bar                                                         |
+
+An item has to be **both**. A live item that has not been published to the site
+is not deployed yet; a published draft is deployed but deliberately hidden. The
+save confirmation says which of the two is still outstanding.
+
+Saving does **not** deploy. Edits accumulate in the tab's working copy and go up
+as a single commit when you publish, so a session of tidying costs one rebuild
+rather than one per edit — add five books, make them all live, publish once.
 
 The trade-off is that unpublished edits live only in that tab. The studio says
 so in the bar, warns before the tab closes, and warns again before disconnect.

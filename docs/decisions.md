@@ -131,3 +131,16 @@
   (counts, particular slugs) were replaced with invariants: every item gets
   derived fields, every declared relation becomes a weight-3 edge, every
   plotted Atlas node appears in the accessible index.
+- **D-029 "Publish" names one thing, not two.** The studio has two unrelated
+  gates — an item's draft flag, and whether the working copy has been
+  committed — and calling both of them Publish made it look as though saved
+  work had silently vanished. The item gate is now _make live_ / _move to
+  draft_ with states Draft and Live; the commit gate is _Publish to site_.
+  The save confirmation names whichever gate is still shut, because "Saved"
+  alone implies the work is done when it usually is not.
+- **D-030 JSON-backed items carry their body through validation.** `readItem`
+  lifts a musing's `body` out of the record into `ItemDoc.body`, so anything
+  re-saving what it returned — publishing, duplicating, restoring — handed the
+  schema frontmatter with a required field missing and was rejected for
+  something the author never touched. `saveItem` now folds the body back in
+  before validating.

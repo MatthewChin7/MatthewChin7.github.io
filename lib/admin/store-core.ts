@@ -538,6 +538,13 @@ export function createStore(vfs: Vfs) {
     const store = STORES[kind];
     const data: Frontmatter = { ...frontmatter, slug };
 
+    // JSON-backed kinds keep the prose in the record itself (a musing's
+    // `body`), so it has to be present before the schema sees it. Without
+    // this, anything that round-trips through readItem — publishing,
+    // duplicating, restoring from the trash — hands back frontmatter with the
+    // body stripped out and is rejected for a field the author never touched.
+    if (store.storage === "json" && body.trim()) data.body = body.trim();
+
     // A blank description becomes the opening sentence of the body — real
     // prose from the post itself rather than a placeholder.
     if (kind === "note" || kind === "project" || kind === "video") {

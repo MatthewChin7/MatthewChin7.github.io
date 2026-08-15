@@ -4,8 +4,8 @@ import { formatDate } from "@/lib/content/derive";
 import { DOMAINS, domainLabels, type Domain } from "@/lib/site/domains";
 
 /**
- * Classic WordPress default-theme sidebar: Search, Recent Posts, Categories,
- * Archives, and Meta widgets. Data is a true reflection of the notes archive
+ * Classic WordPress default-theme sidebar: Search, Recent Posts, Categories
+ * and Archives. Data is a true reflection of the notes archive
  * (categories = domains, archives = post months).
  */
 export function Sidebar() {
@@ -93,24 +93,9 @@ export function Sidebar() {
         </ul>
       </section>
 
-      {/* Meta */}
-      <section className="wp-widget">
-        <h2 className="wp-widget-title">Meta</h2>
-        <ul>
-          <li>
-            <Link href="/search">Search</Link>
-          </li>
-          <li>
-            <a href="/feed.xml">Entries feed</a>
-          </li>
-          <li>
-            <a href="/feed.xml">RSS</a>
-          </li>
-          <li>
-            <a href="https://wordpress.org/">WordPress.org</a>
-          </li>
-        </ul>
-      </section>
+      {/* No Meta widget: the classic theme's version links to wordpress.org
+          and duplicates search and the feed, both of which this site already
+          offers in the header and the footer. */}
     </aside>
   );
 }
