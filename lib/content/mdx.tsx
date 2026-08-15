@@ -5,6 +5,7 @@ import rehypeKatex from "rehype-katex";
 import rehypeSlug from "rehype-slug";
 import rehypePrettyCode from "rehype-pretty-code";
 import { mdxComponents } from "@/components/mdx/mdx-components";
+import { katexMacros } from "@/lib/content/katex-macros";
 
 const prettyCodeOptions = {
   themes: { light: "github-light", dark: "github-dark-dimmed" },
@@ -20,7 +21,11 @@ export async function renderMdx(source: string) {
     options: {
       mdxOptions: {
         remarkPlugins: [remarkGfm, remarkMath],
-        rehypePlugins: [rehypeSlug, [rehypePrettyCode, prettyCodeOptions], rehypeKatex],
+        rehypePlugins: [
+          rehypeSlug,
+          [rehypePrettyCode, prettyCodeOptions],
+          [rehypeKatex, { macros: katexMacros }],
+        ],
       },
     },
   });

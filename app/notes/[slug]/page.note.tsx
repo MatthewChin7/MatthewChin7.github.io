@@ -204,9 +204,14 @@ export default async function NotePage({
               </section>
             </main>
 
-            <div className="space-y-10">
+            {/* The whole column sticks, not the contents card alone: a sticky
+                element keeps its place in the flow, so on a long article it
+                slid down over the widgets beneath it. Sticking the column
+                moves them together, and it scrolls internally on short
+                viewports so the lower widgets stay reachable. */}
+            <div className="space-y-10 lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1">
               {toc.length > 0 ? (
-                <div className="wp-widget sticky top-24 hidden lg:block">
+                <div className="wp-widget hidden lg:block">
                   <TableOfContents entries={toc} />
                 </div>
               ) : null}

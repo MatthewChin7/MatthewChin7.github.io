@@ -191,8 +191,12 @@ test.describe("archive interactions", () => {
   test("cv renders the uploaded PDF in a scrollable viewer", async ({ page }) => {
     await page.goto("/resume");
     await expect(page.getByRole("heading", { name: "CV", level: 1 })).toBeVisible();
-    // embedded PDF viewer present, with a download affordance
-    await expect(page.locator('object[type="application/pdf"]')).toBeVisible();
+    // Embedded PDF viewer present, with a download affordance. WebKit only
+    // reports the <object> visible once it has actually painted the PDF, which
+    // under a full parallel run can take well past the default timeout.
+    await expect(page.locator('object[type="application/pdf"]')).toBeVisible({
+      timeout: 20_000,
+    });
     await expect(page.getByRole("link", { name: /Download PDF/ })).toBeVisible();
     // print emulation hides site chrome
     await page.emulateMedia({ media: "print" });

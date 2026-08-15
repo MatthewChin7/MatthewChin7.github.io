@@ -20,10 +20,11 @@
     "new:project": "tsx scripts/new-content.ts project",
     "new:musing": "tsx scripts/new-content.ts musing"
   },
+  "//katex": "Pinned to the 0.16 line on purpose: rehype-katex@7 renders the article HTML with its own katex ^0.16, and the CSS imported by the pages must come from the same version. Across the 0.16/0.18 boundary KaTeX renamed internal classes (inner -> katex-inner), which silently breaks constructs the stylesheet positions by hand, e.g. the overlay that turns = into != .",
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.19",
     "gray-matter": "^4.0.3",
-    "katex": "^0.18.0",
+    "katex": "^0.16.47",
     "motion": "^12.42.2",
     "next": "^16.2.10",
     "next-mdx-remote": "^6.0.0",
