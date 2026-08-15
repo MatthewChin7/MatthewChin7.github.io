@@ -1,0 +1,21 @@
+{
+  "id": "musing__what-counts-as-one-observation__1786784545521",
+  "kind": "musing",
+  "slug": "what-counts-as-one-observation",
+  "title": "what-counts-as-one-observation",
+  "deletedAt": "2026-08-15T09:02:25.521Z",
+  "frontmatter": {
+    "id": "m-2026-06-18",
+    "slug": "what-counts-as-one-observation",
+    "date": "2026-06-18",
+    "tags": [
+      "statistical-inference",
+      "modeling"
+    ],
+    "type": "question",
+    "related": [
+      "work/hk-pollution-dispersion"
+    ]
+  },
+  "body": "Sample entry. The hardest question in every applied statistics problem I've touched: what counts as one observation? Hourly pollution readings from neighboring stations are not two data points. Neither, probably, are two days of BTC returns."
+}
