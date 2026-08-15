@@ -26,9 +26,15 @@ permissions:
   pages: write
   id-token: write
 
+# One deployment at a time, and never cancel one that is already running.
+# Cancelling the *workflow* does not cancel a Pages *deployment* that has
+# already been handed to GitHub, so the next run collides with it and fails
+# with "in progress deployment". Queueing instead means two publishes in quick
+# succession from the studio simply deploy one after the other; GitHub keeps
+# only the newest pending run, so nothing piles up.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   PAGES_BASE_PATH: ""
