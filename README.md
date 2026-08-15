@@ -59,6 +59,12 @@ DRAFT mark and are excluded from production pages, search, RSS, sitemap,
 and the Atlas. Remove the flag (and for projects, change `status`) to
 publish, then commit and deploy.
 
+A section with nothing published is fine, including in the static export:
+each detail route is gated on its kind having content (see
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) § 4), so emptying a section from
+the studio cannot break the build, and publishing into one restores its
+pages automatically.
+
 MDX components available in articles: Figure, FigureGrid, DiagramFrame,
 Aside, MarginNote, Definition, Theorem, Proof, Proposition, Question,
 Equation, Quote, DataTable, Callout, VideoEmbed, RelatedLink,

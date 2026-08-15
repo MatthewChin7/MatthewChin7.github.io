@@ -4,8 +4,9 @@
  * It answers exactly the requests that `app/admin/api/route.dev.ts` answers on
  * your machine — same URLs, same JSON in and out — so the studio UI does not
  * know or care which one it is talking to. The difference is underneath: this
- * one works on a snapshot of the repository and turns each write into a commit
- * on the branch, which the deploy workflow then publishes.
+ * one works on a snapshot of the repository held in the tab, and the author's
+ * "publish" turns everything written since the last one into a single commit,
+ * which the deploy workflow then publishes.
  */
 import {
   bibliographyFor,
@@ -45,10 +46,13 @@ function kindOf(value: unknown): ContentKind | null {
 
 let snapshot: Snapshot | null = null;
 let loading: Promise<Snapshot> | null = null;
+/** One line per staged edit, used to write the publish commit's message. */
+let staged: string[] = [];
 
 export function resetSnapshot() {
   snapshot = null;
   loading = null;
+  staged = [];
 }
 
 /** True once the repo has been downloaded — the studio shows a loader until then. */
@@ -76,14 +80,41 @@ async function workingCopy(): Promise<Snapshot> {
 }
 
 /**
- * Push whatever the store just wrote. A failed commit drops the snapshot: the
- * in-memory copy and the branch have diverged, and continuing from a stale
- * working copy is how you lose work.
+ * Record what the store just wrote, without committing it.
+ *
+ * Every commit triggers a rebuild and a redeploy, which takes minutes — so
+ * tidying up five posts must not mean five deploys. Edits accumulate in the
+ * working copy and go up together when the author publishes. The cost is that
+ * staged work lives only in this tab until then, which the studio makes loud:
+ * a pending count in the admin bar and a warning before the tab closes.
  */
-async function push(copy: Snapshot, message: string) {
+async function stage(copy: Snapshot, message: string) {
+  staged.push(message);
+  return { pending: copy.vfs.changes().length };
+}
+
+/** The commit message for a batch: one edit names itself, several get a list. */
+function batchMessage(): string {
+  if (staged.length === 1) return staged[0]!;
+  return [
+    `studio: ${staged.length} edits`,
+    "",
+    ...staged.map((m) => `- ${m.replace(/^studio: /, "")}`),
+  ].join("\n");
+}
+
+/**
+ * Send everything staged as one commit. A failed commit drops the working
+ * copy: it and the branch have diverged, and continuing from a stale copy is
+ * how work gets lost.
+ */
+async function publishStaged(copy: Snapshot) {
   try {
-    const result = await commitSnapshot(getToken(), copy, message);
-    return result ? { commit: result.sha.slice(0, 7), commitUrl: result.url } : {};
+    const result = await commitSnapshot(getToken(), copy, batchMessage());
+    staged = [];
+    return result
+      ? { ok: true, pending: 0, commit: result.sha.slice(0, 7), commitUrl: result.url }
+      : { ok: true, pending: 0 };
   } catch (err) {
     resetSnapshot();
     throw err;
@@ -108,6 +139,9 @@ async function handleGet(url: URL): Promise<Response> {
       media: store.listMedia(),
       // LaTeX sources with no post yet — otherwise they would be invisible.
       latexOrphans: store.listLatexProjects().filter((slug) => !slugs.has(slug)),
+      // Edits written to the working copy but not yet committed. The studio
+      // refreshes after every mutation, so this stays current on its own.
+      pending: copy.vfs.changes().map((c) => c.path),
     });
   }
 
@@ -197,7 +231,7 @@ async function handlePost(req: Request): Promise<Response> {
       if (!result.ok) return json(result, 422);
       return json({
         ...result,
-        ...(await push(
+        ...(await stage(
           copy,
           `studio: ${result.created ? "add" : "update"} ${kind} ${result.slug}`,
         )),
@@ -227,7 +261,7 @@ async function handlePost(req: Request): Promise<Response> {
         if (!onlySources.ok) return json(onlySources, 500);
         return json({
           ...onlySources,
-          ...(await push(copy, `studio: save LaTeX sources for ${slug}`)),
+          ...(await stage(copy, `studio: save LaTeX sources for ${slug}`)),
         });
       }
 
@@ -272,7 +306,7 @@ async function handlePost(req: Request): Promise<Response> {
         latexPath: written.path,
         diagnostics: doc.diagnostics,
         stats: doc.stats,
-        ...(await push(
+        ...(await stage(
           copy,
           `studio: ${saved.created ? "add" : "update"} ${kind} ${slug} (LaTeX)`,
         )),
@@ -286,7 +320,7 @@ async function handlePost(req: Request): Promise<Response> {
       if (!result.ok) return json(result, 400);
       return json({
         ...result,
-        ...(await push(copy, `studio: remove ${file} from ${slug}`)),
+        ...(await stage(copy, `studio: remove ${file} from ${slug}`)),
       });
     }
 
@@ -299,7 +333,7 @@ async function handlePost(req: Request): Promise<Response> {
       if (!result.ok) return json(result, 422);
       return json({
         ...result,
-        ...(await push(
+        ...(await stage(
           copy,
           `studio: ${draft ? "unpublish" : "publish"} ${kind} ${slug}`,
         )),
@@ -313,19 +347,35 @@ async function handlePost(req: Request): Promise<Response> {
       if (!result.ok) return json(result, 422);
       return json({
         ...result,
-        ...(await push(copy, `studio: duplicate ${kind} ${result.slug}`)),
+        ...(await stage(copy, `studio: duplicate ${kind} ${result.slug}`)),
       });
     }
 
     case "restore": {
       const result = store.restoreTrash(String(body.id ?? ""));
       if (!result.ok) return json(result, 422);
-      return json({ ...result, ...(await push(copy, `studio: restore ${result.slug}`)) });
+      return json({
+        ...result,
+        ...(await stage(copy, `studio: restore ${result.slug}`)),
+      });
     }
 
     case "emptyTrash": {
       const result = store.emptyTrash();
-      return json({ ...result, ...(await push(copy, "studio: empty trash")) });
+      return json({ ...result, ...(await stage(copy, "studio: empty trash")) });
+    }
+
+    /** Commit everything staged so far — one deploy for the whole batch. */
+    case "publish": {
+      if (copy.vfs.changes().length === 0)
+        return json({ ok: true, pending: 0, empty: true });
+      return json(await publishStaged(copy));
+    }
+
+    /** Throw the staged edits away by re-reading the branch. */
+    case "discard": {
+      resetSnapshot();
+      return json({ ok: true, pending: 0 });
     }
 
     case "deleteMedia": {
@@ -341,7 +391,10 @@ async function handlePost(req: Request): Promise<Response> {
         );
       const result = store.deleteMedia(target);
       if (!result.ok) return json(result, 400);
-      return json({ ...result, ...(await push(copy, `studio: delete media ${target}`)) });
+      return json({
+        ...result,
+        ...(await stage(copy, `studio: delete media ${target}`)),
+      });
     }
 
     default:
@@ -361,7 +414,7 @@ async function handleDelete(url: URL): Promise<Response> {
   const result = copy.store.deleteItem(kind, slug);
   if (!result.ok) return json(result, 404);
   if (url.searchParams.get("sources") === "true") copy.store.deleteLatexProject(slug);
-  return json({ ...result, ...(await push(copy, `studio: trash ${kind} ${slug}`)) });
+  return json({ ...result, ...(await stage(copy, `studio: trash ${kind} ${slug}`)) });
 }
 
 /* ————————————————————————————————————————————————————————————————
@@ -388,7 +441,7 @@ async function upload(req: Request): Promise<Response> {
     ok: true,
     path: url,
     note: "Committed to the repository — the site rebuilds automatically.",
-    ...(await push(copy, `studio: upload ${url}`)),
+    ...(await stage(copy, `studio: upload ${url}`)),
   });
 }
 

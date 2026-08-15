@@ -12,6 +12,7 @@ import { createStore } from "@/lib/admin/store-core";
 const store = createStore(createNodeVfs());
 
 export const {
+  pruneRelated,
   listItems,
   readItem,
   saveItem,

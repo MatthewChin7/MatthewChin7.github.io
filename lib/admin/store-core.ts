@@ -173,6 +173,24 @@ export const BIB_FILE = "references.bib";
 
 const MEDIA_DIRS = ["images", "books", "video-posters"];
 
+/**
+ * The prefix each kind uses in a `related` id. Reading lists and pages are not
+ * part of the content graph, so nothing can point at them.
+ */
+const GRAPH_PREFIX: Partial<Record<ContentKind, string>> = {
+  project: "work",
+  note: "notes",
+  problem: "problems",
+  musing: "marginalia",
+  video: "videos",
+};
+
+/** The id other content uses to refer to this item, if it can be referred to. */
+function globalId(kind: ContentKind, slug: string): string | null {
+  const prefix = GRAPH_PREFIX[kind];
+  return prefix ? `${prefix}/${slug}` : null;
+}
+
 /** Only these extensions are writable, and only inside the project folder. */
 function safeFileName(name: string): string {
   const base = name.replace(/\\/g, "/").replace(/\.\.+/g, "").replace(/^\/+/, "");
@@ -227,6 +245,12 @@ export type SaveOutcome =
   | { ok: true; path: string; slug: string; created: boolean }
   | { ok: false; error: string; issues?: { field: string; message: string }[] };
 
+/** An item that pointed at something which was deleted. */
+export interface InboundLink {
+  kind: ContentKind;
+  slug: string;
+}
+
 export interface TrashEntry {
   id: string;
   kind: ContentKind;
@@ -235,6 +259,12 @@ export interface TrashEntry {
   deletedAt: string;
   frontmatter: Frontmatter;
   body: string;
+  /**
+   * Who linked to this item when it was deleted. Those links are stripped so
+   * the build stays green; keeping the list here is what lets a restore put
+   * them back instead of silently losing the relationships.
+   */
+  inbound?: InboundLink[];
 }
 
 export interface MediaFile {
@@ -342,6 +372,68 @@ export function createStore(vfs: Vfs) {
     const dest = latexDir(to);
     if (src === dest || !vfs.exists(src)) return;
     vfs.rename(src, dest);
+  }
+
+  /* ——— Cross-references ——— */
+
+  /**
+   * Rewrite one item's `related` list in place.
+   *
+   * Deliberately not routed through `saveItem`: this is a repair to somebody
+   * else's file, so it must not re-validate their frontmatter, stamp
+   * `updated`, or refuse because of a problem that was already there.
+   */
+  function editRelated(
+    kind: ContentKind,
+    slug: string,
+    edit: (related: string[]) => string[],
+  ): boolean {
+    const store = STORES[kind];
+
+    if (store.storage === "mdx") {
+      const file = joinPath(mdxDir(store), `${slug}.mdx`);
+      if (!vfs.exists(file)) return false;
+      const { data, content } = matter(vfs.readFile(file));
+      const before = Array.isArray(data.related) ? (data.related as string[]) : [];
+      const after = edit(before);
+      if (after.length === before.length && after.every((r, i) => r === before[i]))
+        return false;
+      const next: Frontmatter = { ...data };
+      if (after.length > 0) next.related = after;
+      else delete next.related;
+      vfs.writeFile(file, matter.stringify(`\n${content.trim()}\n`, next));
+      return true;
+    }
+
+    const entries = readJsonFile(store);
+    const entry = entries.find((e) => e.slug === slug);
+    if (!entry) return false;
+    const before = Array.isArray(entry.related) ? (entry.related as string[]) : [];
+    const after = edit(before);
+    if (after.length === before.length && after.every((r, i) => r === before[i]))
+      return false;
+    if (after.length > 0) entry.related = after;
+    else delete entry.related;
+    writeJsonFile(store, entries);
+    return true;
+  }
+
+  /**
+   * Strip a global id from every item that refers to it, and report who did.
+   *
+   * A dangling `related` id fails `pnpm validate:content`, which fails the
+   * build — so deleting an item has to take its inbound links with it.
+   */
+  function pruneRelated(id: string): InboundLink[] {
+    const pruned: InboundLink[] = [];
+    for (const item of listItems()) {
+      if (
+        editRelated(item.kind, item.slug, (related) => related.filter((r) => r !== id))
+      ) {
+        pruned.push({ kind: item.kind, slug: item.slug });
+      }
+    }
+    return pruned;
   }
 
   /* ——— Listing ——— */
@@ -509,18 +601,6 @@ export function createStore(vfs: Vfs) {
         error: `No ${storeLabel(kind).toLowerCase()} "${slug}" to delete.`,
       };
 
-    const id = `${kind}__${slug}__${Date.now()}`;
-    const record: TrashEntry = {
-      id,
-      kind,
-      slug,
-      title: titleOf(kind, doc.frontmatter, slug),
-      deletedAt: new Date().toISOString(),
-      frontmatter: doc.frontmatter,
-      body: doc.body,
-    };
-    vfs.writeFile(joinPath(TRASH, `${id}.json`), JSON.stringify(record, null, 2) + "\n");
-
     const store = STORES[kind];
     if (store.storage === "mdx") {
       vfs.removeFile(joinPath(mdxDir(store), `${slug}.mdx`));
@@ -530,6 +610,25 @@ export function createStore(vfs: Vfs) {
         readJsonFile(store).filter((e) => e.slug !== slug),
       );
     }
+
+    // Remove the item first, then prune: nothing should still be pointing at
+    // it, and pruning walks the listing this delete has just changed.
+    const graphId = globalId(kind, slug);
+    const inbound = graphId ? pruneRelated(graphId) : [];
+
+    const id = `${kind}__${slug}__${Date.now()}`;
+    const record: TrashEntry = {
+      id,
+      kind,
+      slug,
+      title: titleOf(kind, doc.frontmatter, slug),
+      deletedAt: new Date().toISOString(),
+      frontmatter: doc.frontmatter,
+      body: doc.body,
+      ...(inbound.length > 0 ? { inbound } : {}),
+    };
+    vfs.writeFile(joinPath(TRASH, `${id}.json`), JSON.stringify(record, null, 2) + "\n");
+
     return { ok: true, path: `content/.trash/${id}.json`, slug, created: false };
   }
 
@@ -551,7 +650,20 @@ export function createStore(vfs: Vfs) {
       return { ok: false, error: "That trashed item no longer exists." };
     const record = JSON.parse(vfs.readFile(file)) as TrashEntry;
     const result = saveItem(record.kind, record.slug, record.frontmatter, record.body);
-    if (result.ok) vfs.removeFile(file);
+    if (!result.ok) return result;
+
+    // Put back the links that were stripped when it was deleted, so a restore
+    // returns the item to the graph rather than to an island.
+    const graphId = globalId(record.kind, result.slug);
+    if (graphId) {
+      for (const link of record.inbound ?? []) {
+        editRelated(link.kind, link.slug, (related) =>
+          related.includes(graphId) ? related : [...related, graphId],
+        );
+      }
+    }
+
+    vfs.removeFile(file);
     return result;
   }
 
@@ -701,6 +813,7 @@ export function createStore(vfs: Vfs) {
 
   return {
     vfs,
+    pruneRelated,
     listItems,
     readItem,
     saveItem,

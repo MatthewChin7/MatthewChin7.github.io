@@ -77,8 +77,8 @@ On open, the studio downloads a working copy of `content/` into the tab (media
 is listed by name and size only, never downloaded). Your edits run against that
 copy using exactly the same validation code as the local studio — a save that
 would fail `pnpm validate:content` is refused in the browser, before it can
-become a red build. When a save succeeds, the changed files go up as **one
-commit**, and that commit triggers the deploy.
+become a red build. When you publish, everything written since the last publish goes
+up as **one commit**, and that commit triggers the deploy.
 
 ### Connecting it
 
@@ -102,6 +102,16 @@ so treat it like a password. Scope it to this one repository, give it an
 expiry, and if a machine is lost, revoke it on GitHub — that alone is enough,
 since nothing else grants access. Use _Disconnect_ in the admin bar to clear it
 from a browser.
+
+### Publishing is a separate step
+
+Saving does **not** deploy. Edits accumulate in the tab's working copy, and the
+admin bar shows `Publish N changes`; that button sends the whole batch as a
+single commit, so a session of tidying costs one rebuild rather than one per
+edit. Deleting five posts is one deploy, not five.
+
+The trade-off is that unpublished edits live only in that tab. The studio says
+so in the bar, warns before the tab closes, and warns again before disconnect.
 
 ### Limits worth knowing
 
@@ -143,19 +153,27 @@ It changes four things, all in `next.config.ts`:
 | `/admin/api`     | a route (dev only)  | excluded — not a route |
 | Studio backend   | `/admin/api`        | the GitHub API         |
 
-Two routes need care, and both are handled in config rather than by deleting
-files in CI, so a local dry run produces exactly what CI produces:
+Some routes need care, and all of it is handled in config rather than by
+deleting files in CI, so a local dry run produces exactly what CI produces:
 
-- **`/videos/[slug]`** — `output: export` rejects a dynamic route that
-  prerenders zero pages, and every video is currently a draft. The route file
-  is `page.video.tsx`, and `next.config.ts` counts `video.tsx` as a page
-  extension only when a published video exists. Publish one (`draft: false`)
-  and the next build includes the route automatically.
+- **Every detail route** (`/notes/[slug]`, `/work/[slug]`, `/problems/[slug]`,
+  `/marginalia/[slug]`, `/reading/[slug]`, `/videos/[slug]`) — `output: export`
+  rejects a dynamic route that prerenders zero pages, and drafts never
+  prerender. So each one is named `page.<kind>.tsx`, and `next.config.ts`
+  counts `<kind>.tsx` as a page extension only when that kind has something
+  published. Empty a section from the studio and the export keeps working;
+  publish into it and the next build picks the route up on its own. **This is
+  what stops a delete in the hosted studio from turning the deploy red.**
 - **`/atlas`** — used to read `searchParams` on the server, which forces
   dynamic rendering. It now reads them in the browser
   (`components/atlas/atlas-shell.tsx`), so the page is static and deep links
   like `?view=time&domain=mathematics` still work. The accessible index renders
   as the Suspense fallback, so the full node list is on the page either way.
+- **Open Graph images** are site-wide (`app/opengraph-image.tsx`) rather than
+  per-post. Per-item cards would have to live inside those same dynamic
+  segments, where they cannot be gated — Next's metadata-file convention does
+  not honour custom page extensions — so an empty section would break the
+  build. Every page inherits the site card instead.
 
 ---
 

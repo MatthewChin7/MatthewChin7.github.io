@@ -113,8 +113,8 @@ function ConnectForm() {
           <h1 className="wpa-gate-title">Studio</h1>
           <p className="wpa-gate-lead">
             This page is static. To edit the archive it needs a GitHub token with write
-            access to the repository — it commits your changes, and the commit rebuilds
-            the site.
+            access to the repository — publishing commits your changes, and the commit
+            rebuilds the site.
           </p>
 
           {!hasBuiltInRepo() || !getRepoRef() ? (

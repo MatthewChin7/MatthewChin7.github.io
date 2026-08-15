@@ -1201,6 +1201,25 @@ body {
   flex: 1;
 }
 
+/* Staged-edit indicator: the one control in the bar that must read as an
+   action, because unpublished work lives only in the open tab. */
+.wpa-bar-publish {
+  background: var(--wpa-blue);
+  border-radius: 3px;
+  font-weight: 600;
+  height: 24px;
+}
+
+.wpa-bar-publish:hover:not(:disabled) {
+  background: var(--wpa-blue-hover);
+  color: #fff;
+}
+
+.wpa-bar-publish:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
 .wpa-bar-env {
   color: #a7aaad;
   font-size: 11px;

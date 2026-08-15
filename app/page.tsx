@@ -75,9 +75,7 @@ export default function HomePage() {
                   Science.
                 </p>
                 <p className="mt-2 max-w-[62ch] text-lg leading-relaxed text-fg">
-                  I grew up in Hong Kong, London and Singapore. As is common for
-                  international students, “Where’s home” is a tricky question; I tend to
-                  divert such conversations to today’s weather.
+                  I grew up in Hong Kong, London and Singapore.
                 </p>
               </section>
             </article>

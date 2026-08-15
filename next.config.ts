@@ -23,28 +23,66 @@ import type { NextConfig } from "next";
 const isStatic = process.env.STATIC_EXPORT === "1";
 const basePath = process.env.PAGES_BASE_PATH || "";
 
-/**
- * `output: export` rejects a dynamic route whose `generateStaticParams()`
- * yields nothing, and every video is currently a draft — drafts never
- * prerender. So `app/videos/[slug]/page.video.tsx` is a route only when there
- * is something for it to render: publish a video (draft: false) and the next
- * build picks it up on its own. Server builds always include it.
- */
-function hasPublishedVideos(): boolean {
+const CONTENT = path.join(process.cwd(), "content");
+
+function readJson(file: string): unknown[] {
   try {
-    const file = path.join(process.cwd(), "content", "videos", "videos.json");
-    const entries: unknown = JSON.parse(fs.readFileSync(file, "utf8"));
-    return (
-      Array.isArray(entries) && entries.some((e) => !(e as { draft?: boolean }).draft)
-    );
+    const parsed: unknown = JSON.parse(fs.readFileSync(path.join(CONTENT, file), "utf8"));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Published (non-draft) entries in a JSON-backed collection. */
+function publishedInJson(file: string): boolean {
+  return readJson(file).some((e) => !(e as { draft?: boolean }).draft);
+}
+
+/** Published (non-draft) documents in a directory of MDX. */
+function publishedInDir(dir: string): boolean {
+  try {
+    return fs
+      .readdirSync(path.join(CONTENT, dir))
+      .filter((f) => f.endsWith(".mdx"))
+      .some(
+        (f) =>
+          !/^draft:\s*true\s*$/m.test(
+            fs.readFileSync(path.join(CONTENT, dir, f), "utf8"),
+          ),
+      );
   } catch {
     return false;
   }
 }
 
+/**
+ * Detail routes are gated on having something to render.
+ *
+ * `output: export` rejects a dynamic route whose `generateStaticParams()`
+ * yields nothing, and drafts never prerender — so a section that is empty (or
+ * entirely drafts) would fail the build rather than simply having no pages.
+ * Each detail route is therefore named `page.<kind>.tsx`, and `<kind>.tsx`
+ * counts as a page extension only when that kind has published content.
+ *
+ * Publish something and the next build picks the route up on its own; empty a
+ * section from the studio and the export keeps working. Server builds always
+ * include every route, so nothing about local development changes.
+ */
+const CONTENT_ROUTES: { ext: string; published: () => boolean }[] = [
+  { ext: "note", published: () => publishedInDir("notes") },
+  { ext: "project", published: () => publishedInDir("projects") },
+  { ext: "problem", published: () => publishedInDir("problems") },
+  { ext: "musing", published: () => publishedInJson("marginalia/marginalia.json") },
+  { ext: "book", published: () => publishedInJson("reading/reading.json") },
+  { ext: "video", published: () => publishedInJson("videos/videos.json") },
+];
+
 const pageExtensions = ["tsx", "ts", "jsx", "js"];
 if (!isStatic) pageExtensions.unshift("dev.tsx", "dev.ts");
-if (!isStatic || hasPublishedVideos()) pageExtensions.unshift("video.tsx");
+for (const route of CONTENT_ROUTES) {
+  if (!isStatic || route.published()) pageExtensions.unshift(`${route.ext}.tsx`);
+}
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },

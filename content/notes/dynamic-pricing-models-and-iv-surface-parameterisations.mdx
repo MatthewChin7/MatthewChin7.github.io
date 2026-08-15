@@ -1,0 +1,176 @@
+---
+title: "Dynamic Pricing Models and IV Surface Parameterisations"
+slug: "dynamic-pricing-models-and-iv-surface-parameterisations"
+description: "The resource I wish I had before constructing my first volatility surface: four mistakes I made about pricing models, interpolation, and what implied volatility actually is."
+date: "2026-08-15"
+type: "explainer"
+domains: ["markets", "mathematics"]
+tags:
+  [
+    "volatility",
+    "options",
+    "svi",
+    "ssvi",
+    "heston",
+    "local-volatility",
+    "implied-volatility",
+  ]
+related: ["notes/the-dupire-equation"]
+---
+
+Black–Scholes, Heston, jump diffusion, Dupire, SVI/SSVI, and heck, the Bates
+model. When I first learned about different pricing models and
+volatility-surface interpolation techniques, I came across far too many
+trivialisations that I found confusing. Worse, I became convinced that these
+were simply different ways to interpolate a volatility surface. I wrote this
+short article as the resource I wish I had before constructing my first
+volatility surface.
+
+## Mistake 1. Market option prices form a complete, smooth surface
+
+Retrospectively, I am not sure how I came to make this assumption, and I might
+be unique in this blunder. Either way, the mistake is trivially explainable.
+Not all option markets are replete with quotes for _every_ strike and maturity;
+you would be hard-pressed to find a large market for extremely out-of-the-money
+options. Moreover, observed implied volatilities are not necessarily
+distributed smoothly across strikes and maturities. Even for a single $(K,T)$,
+there may be different quotes because of bid–ask spreads, trading venues, or
+data sources. Effective smoothing and interpolation methods are therefore
+required to construct a coherent surface.
+
+## Mistake 2. Interpolation across strikes and tenors is a single endeavour
+
+Again, perhaps a unique shortcoming, but interpolating across strikes is
+different from interpolating across tenors. Techniques such as SVI allow us to
+interpolate across log-forward moneyness _per tenor_, whereas SSVI provides a
+parameterisation across both moneyness _and_ tenor. Technically, fitting an
+independent SVI slice with five parameters to each of $n$ maturities gives $5n$
+parameters before any cross-tenor constraints are imposed.
+
+## Mistake 3. All the different volatility models are merely different interpolation methods
+
+Unfortunately, no. The objects discussed above broadly fall into two
+categories: dynamic pricing models and surface parameterisations.
+
+Dynamic pricing models include Black–Scholes, Heston, jump diffusion, Dupire,
+and, for the expert modeller, the Bates model. I found it especially tempting
+to use Bates when I first started volatility modelling; I was left with an
+overfitted pie in the face. These models are used to price options and carry
+different assumptions about the dynamics of the underlying and its volatility.
+
+_Constant volatility (Black–Scholes):_ volatility for a given underlying is
+fixed.
+
+_Local volatility (Dupire):_ volatility varies _deterministically_ with the
+underlying spot $S_t$ and time $t$.
+
+_Stochastic volatility (Heston):_ volatility is itself a random process driven
+by a separate Brownian shock. In Heston, variance follows a square-root,
+mean-reverting process of the Cox–Ingersoll–Ross form.
+
+_Jump diffusion:_ the underlying price experiences random jumps, typically
+governed by a Poisson process. In the standard Merton jump-diffusion model, the
+diffusion volatility may remain constant; it is the underlying price, rather
+than volatility itself, that jumps.
+
+_Stochastic volatility with jumps (Bates):_ Bates combines Heston-style
+stochastic volatility with jumps in the underlying price.
+
+Surface parameterisations, by contrast, allow us to represent a smooth
+implied-volatility surface in terms of a finite collection of parameters. SVI
+parameterises an individual strike slice, while SSVI links the smile across
+both strike and maturity. SABR occupies a slightly different position: it is a
+stochastic-volatility model whose approximate implied-volatility formula is
+also commonly used to parameterise individual smile slices. Independent strike
+slices must be combined with an effective tenor interpolation or
+parameterisation and appropriate no-arbitrage constraints.
+
+## Mistake 3.5. Implied volatility is simply the risk-neutral expectation of all possible local-volatility paths
+
+Formally, the standard Black–Scholes implied volatility
+$\sigma_{\mathrm{BS}}(K,T)$ is the single constant volatility that makes the
+Black–Scholes price equal to the observed market price of an option with strike
+$K$ and maturity $T$. In general,
+
+$$
+\sigma_{\mathrm{BS}}^2(K,T)
+\neq
+\mathbb{E}^{\mathbb{Q}}
+\left[
+\frac{1}{T}
+\int_0^T \sigma_\text{loc}^2(S_t,t)\,dt
+\right].
+$$
+
+The expression on the right is the expected average realised variance under
+$\mathbb{Q}$ and, under the usual continuous-diffusion assumptions, corresponds
+to the fair variance-swap rate. Unlike implied volatility, it is not
+strike-dependent.
+
+Implied volatility is instead an option-specific, constant-volatility summary
+of how the entire risk-neutral distribution of the future underlying price
+affects that option's value. If the local-volatility model has been calibrated
+to the observed surface, then
+
+$$
+C_{\mathrm{BS}}
+\left(S_0,K,T,\sigma_{\mathrm{BS}}(K,T)\right)
+=
+\exp(-rT)
+\mathbb{E}_{\mathrm{loc}}^{\mathbb{Q}}
+\left[(S_T-K)^+\right],
+$$
+
+where the local-volatility dynamics are
+
+$$
+dS_t
+=
+(r-q)S_t\,dt
++
+\sigma_\text{loc}(S_t,t)S_t\,dW_t^\mathbb{Q}.
+$$
+
+By comparison, under Black–Scholes,
+
+$$
+S_T
+=
+S_0
+\exp
+\left[
+\left(r-q-\frac{1}{2}\sigma_{\mathrm{BS}}^2\right)T
++
+\sigma_{\mathrm{BS}}\sqrt{T}Z
+\right],
+\qquad
+Z\sim\mathcal{N}(0,1).
+$$
+
+Thus, $\sigma_{\mathrm{BS}}(K,T)$ is chosen so that this lognormal model
+reproduces the option price generated by the relevant risk-neutral
+distribution; it is not generally an average of the local-volatility paths.
+
+## Mistake 4. Risk-neutral and physical measures describe the same expectation
+
+The physical measure $\mathbb{P}$ describes the distribution of outcomes we
+expect to observe in the real world. Thus, it is relevant for forecasting
+realised returns and volatility. The risk-neutral measure $\mathbb{Q}$, by
+contrast, is the pricing measure under which discounted tradable asset prices
+are martingales. It is inferred from market prices and incorporates the risk
+premia investors require to bear uncertainty.
+
+Consequently, option-implied volatility should not be interpreted as a pure
+forecast of future realised volatility. Schematically,
+
+$$
+\mathbb{E}^{\mathbb{Q}}[RV_{0,T}]
+=
+\mathbb{E}^{\mathbb{P}}[RV_{0,T}]
++
+\text{variance risk premium},
+$$
+
+where the sign of the final term follows the convention used here. Implied
+quantities combine expectations about future outcomes with the market price of
+the risks associated with those outcomes.

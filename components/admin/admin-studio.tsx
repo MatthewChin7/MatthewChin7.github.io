@@ -445,6 +445,9 @@ export function AdminStudio({
   const [trash, setTrash] = useState(data.trash);
   const [media, setMedia] = useState(data.media);
   const [orphans, setOrphans] = useState(data.latexOrphans);
+  // Hosted studio only: repo-relative paths written but not yet committed.
+  const [pending, setPending] = useState<string[]>([]);
+  const [publishing, setPublishing] = useState(false);
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [editing, setEditing] = useState<EditorTarget | null>(null);
   const [latexTarget, setLatexTarget] = useState<LatexTarget | null>(null);
@@ -466,12 +469,57 @@ export function AdminStudio({
       notify(failure.error ?? "Could not read the archive.", false);
       return;
     }
-    const json = (await res.json()) as Omit<AdminData, "site" | "today">;
+    const json = (await res.json()) as Omit<AdminData, "site" | "today"> & {
+      pending?: string[];
+    };
     setItems(json.items);
     setTrash(json.trash);
     setMedia(json.media);
     setOrphans(json.latexOrphans);
+    setPending(json.pending ?? []);
   }, [notify]);
+
+  /**
+   * Send every staged edit as one commit — and therefore one deploy. Saves do
+   * not publish on their own, so a session of tidying costs one rebuild
+   * instead of one per change.
+   */
+  const publish = useCallback(async () => {
+    setPublishing(true);
+    try {
+      const res = await adminFetch("/admin/api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "publish" }),
+      });
+      const result = (await res.json()) as { error?: string; commit?: string };
+      if (!res.ok) {
+        notify(result.error ?? "Could not publish.", false);
+        // The working copy was dropped; reload it so the studio is not stale.
+        await refresh();
+        return;
+      }
+      notify(
+        result.commit
+          ? `Published as ${result.commit}. The site rebuilds in a minute or two.`
+          : "Nothing to publish.",
+      );
+      await refresh();
+    } finally {
+      setPublishing(false);
+    }
+  }, [notify, refresh]);
+
+  /**
+   * Staged edits live in this tab and nowhere else, so leaving with unpublished
+   * work would lose it silently.
+   */
+  useEffect(() => {
+    if (pending.length === 0) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [pending.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -610,8 +658,9 @@ export function AdminStudio({
           </p>
           {studioMode === "github" ? (
             <p className="wpa-boot-note">
-              The studio keeps a working copy of the repository in this tab. Every save is
-              committed to the branch, which rebuilds and redeploys the site.
+              The studio keeps a working copy of the repository in this tab. Edits stay
+              here until you publish them, and publishing commits the batch — one rebuild
+              for the whole session rather than one per change.
             </p>
           ) : null}
         </div>
@@ -635,13 +684,40 @@ export function AdminStudio({
           + New LaTeX post
         </button>
         <span className="wpa-bar-spacer" />
+        {studioMode === "github" && pending.length > 0 ? (
+          <button
+            type="button"
+            className="wpa-bar-publish"
+            onClick={() => void publish()}
+            disabled={publishing}
+            title={pending.join("\n")}
+          >
+            {publishing
+              ? "Publishing…"
+              : `Publish ${pending.length} change${pending.length === 1 ? "" : "s"}`}
+          </button>
+        ) : null}
         <span className="wpa-bar-env">
           {studioMode === "github"
-            ? "hosted · commits to the repository"
+            ? pending.length > 0
+              ? "unpublished — staged in this tab only"
+              : "hosted · published"
             : "development · writes to the working tree"}
         </span>
         {studioMode === "github" && onDisconnect ? (
-          <button type="button" onClick={onDisconnect}>
+          <button
+            type="button"
+            onClick={() => {
+              if (
+                pending.length > 0 &&
+                !window.confirm(
+                  `${pending.length} unpublished change${pending.length === 1 ? "" : "s"} will be lost. Disconnect anyway?`,
+                )
+              )
+                return;
+              onDisconnect();
+            }}
+          >
             Disconnect
           </button>
         ) : null}

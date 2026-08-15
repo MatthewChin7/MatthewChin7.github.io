@@ -13,28 +13,31 @@
     "date": "2025-04-01",
     "status": "complete",
     "role": "Designer and implementer",
-    "domains": [
-      "markets"
-    ],
-    "methods": [
-      "market-microstructure",
-      "valuation",
-      "software-engineering"
-    ],
-    "tags": [
-      "market-making",
-      "options",
-      "microstructure",
-      "python",
-      "trading"
-    ],
+    "domains": ["markets"],
+    "methods": ["market-microstructure", "valuation", "software-engineering"],
+    "tags": ["market-making", "options", "microstructure", "python", "trading"],
     "featured": true,
     "order": 4,
     "coverVariant": "orderbook",
-    "related": [
-      "work/btc-vol-surface",
-      "notes/fitting-markets-vs-forecasting-reality"
-    ]
+    "related": ["work/btc-vol-surface", "notes/fitting-markets-vs-forecasting-reality"]
   },
-  "body": "## Abstract\n\nBuilt for a live trading competition: a Python system that quoted\ntwo-sided markets in several instruments, priced derivatives off its own\nmid estimates, and enforced position and loss limits mechanically. The\ninteresting engineering was not the pricing formulas but the plumbing —\nstaying responsive while the exchange feed, the pricing loop, and the\nrisk checks all wanted the same milliseconds.\n\n## Architecture\n\n- **Feed handler** — normalizes exchange messages into an internal book.\n- **Fair-value engine** — mid estimates blended from book imbalance and\n  recent trades; derivatives priced off those mids rather than last trades.\n- **Quoter** — spreads set from inventory and recent volatility; quotes\n  widen mechanically as position accumulates (a standard\n  inventory-control policy in the spirit of Avellaneda–Stoikov).\n- **Risk layer** — hard position caps and a kill switch that pulls all\n  quotes; the one component allowed to interrupt every other.\n\n<Callout kind=\"idea\">\n  A market maker's edge is mostly the discipline of its exits: the system design question\n  is \"what turns quoting off?\", not \"what turns it on?\"\n</Callout>\n\n## What failed or changed\n\nEarly versions re-priced on every book tick and fell behind during bursts;\nbatching repricing onto a fixed cadence made behavior predictable under\nload. Adverse selection was the persistent tax: naive symmetric quotes\naround a stale mid get hit precisely when the mid is most wrong.\n\n## What I would do next\n\nReplace the hand-tuned spread policy with one calibrated from the\ncompetition's own fill data, and measure the adverse-selection cost per\nfill directly."
+  "body": "## Abstract\n\nBuilt for a live trading competition: a Python system that quoted\ntwo-sided markets in several instruments, priced derivatives off its own\nmid estimates, and enforced position and loss limits mechanically. The\ninteresting engineering was not the pricing formulas but the plumbing \u2014\nstaying responsive while the exchange feed, the pricing loop, and the\nrisk checks all wanted the same milliseconds.\n\n## Architecture\n\n- **Feed handler** \u2014 normalizes exchange messages into an internal book.\n- **Fair-value engine** \u2014 mid estimates blended from book imbalance and\n  recent trades; derivatives priced off those mids rather than last trades.\n- **Quoter** \u2014 spreads set from inventory and recent volatility; quotes\n  widen mechanically as position accumulates (a standard\n  inventory-control policy in the spirit of Avellaneda\u2013Stoikov).\n- **Risk layer** \u2014 hard position caps and a kill switch that pulls all\n  quotes; the one component allowed to interrupt every other.\n\n<Callout kind=\"idea\">\n  A market maker's edge is mostly the discipline of its exits: the system design question\n  is \"what turns quoting off?\", not \"what turns it on?\"\n</Callout>\n\n## What failed or changed\n\nEarly versions re-priced on every book tick and fell behind during bursts;\nbatching repricing onto a fixed cadence made behavior predictable under\nload. Adverse selection was the persistent tax: naive symmetric quotes\naround a stale mid get hit precisely when the mid is most wrong.\n\n## What I would do next\n\nReplace the hand-tuned spread policy with one calibrated from the\ncompetition's own fill data, and measure the adverse-selection cost per\nfill directly.",
+  "inbound": [
+    {
+      "kind": "musing",
+      "slug": "liquidity-is-a-state-variable"
+    },
+    {
+      "kind": "musing",
+      "slug": "kill-switch-first"
+    },
+    {
+      "kind": "project",
+      "slug": "btc-vol-surface"
+    },
+    {
+      "kind": "note",
+      "slug": "fitting-markets-vs-forecasting-reality"
+    }
+  ]
 }

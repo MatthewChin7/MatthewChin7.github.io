@@ -3,6 +3,7 @@ import {
   getAllContent,
   getAllNotes,
   getAllProjects,
+  getAllReading,
   getReading,
   contentId,
   findById,
@@ -18,14 +19,16 @@ import {
 import { extractToc } from "@/lib/content/toc";
 
 describe("content loading", () => {
-  it("loads projects and notes with derived fields", () => {
-    const projects = getAllProjects();
-    expect(projects.length).toBeGreaterThanOrEqual(5);
-    for (const p of projects) {
-      expect(p.readingTime).toBeGreaterThan(0);
-      expect(p.excerpt.length).toBeGreaterThan(0);
+  it("derives reading time and an excerpt for every item it loads", () => {
+    // Counts are not the assertion — content comes and goes as it is written
+    // and retired. What must hold is that nothing loads without its derived
+    // fields, whatever the archive currently contains.
+    const items = [...getAllProjects(), ...getAllNotes()];
+    expect(items.length).toBeGreaterThan(0);
+    for (const item of items) {
+      expect(item.readingTime).toBeGreaterThan(0);
+      expect(item.excerpt.length).toBeGreaterThan(0);
     }
-    expect(getAllNotes().length).toBeGreaterThanOrEqual(3);
   });
 
   it("has globally unique content ids", () => {
@@ -33,24 +36,35 @@ describe("content loading", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("resolves ids back to items", () => {
-    expect(findById("work/btc-vol-surface")?.kind).toBe("project");
+  it("resolves every id it hands out, and nothing else", () => {
+    for (const item of getAllContent()) {
+      expect(findById(contentId(item))).toBe(item);
+    }
     expect(findById("nowhere/nothing")).toBeUndefined();
   });
 
   it("resolves reading entries for review pages", () => {
-    expect(getReading("hull-options-futures-derivatives")?.author).toBe("John C. Hull");
+    for (const book of getAllReading()) {
+      expect(getReading(book.slug)?.title).toBe(book.title);
+    }
     expect(getReading("not-a-book")).toBeUndefined();
   });
 });
 
 describe("relatedContent", () => {
   it("ranks explicit relations above inferred tag matches", () => {
-    const project = getAllProjects().find((p) => p.slug === "btc-vol-surface")!;
-    const related = relatedContent(project, 6);
-    const relatedIds = related.map(contentId);
-    // explicit relations come first, in frontmatter order
-    expect(relatedIds.slice(0, project.related.length)).toEqual(project.related);
+    // Any item that names relations will do — the ordering rule is the point,
+    // not which post happens to carry it.
+    const withRelations = getAllContent().filter(
+      (i) => "related" in i && Array.isArray(i.related) && i.related.length > 0,
+    );
+    expect(withRelations.length).toBeGreaterThan(0);
+    for (const item of withRelations) {
+      const explicit = (item as { related: string[] }).related;
+      const ids = relatedContent(item, 8).map(contentId);
+      // Explicit relations come first, in frontmatter order.
+      expect(ids.slice(0, explicit.length)).toEqual(explicit);
+    }
   });
 
   it("never returns the item itself", () => {

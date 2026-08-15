@@ -19,7 +19,9 @@ export default function NotesPage() {
     domains: n.domains,
     tags: n.tags,
     draft: Boolean(n.draft),
-    excerpt: n.excerpt,
+    // The authored description, not the derived excerpt: an excerpt of a
+    // maths-heavy post reads badly once the formulae are stripped out of it.
+    excerpt: n.description || n.excerpt,
     readingTime: n.readingTime,
   }));
 

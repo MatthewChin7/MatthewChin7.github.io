@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  CONTENT_KINDS,
   deleteItem,
   deriveDescription,
   duplicateItem,
@@ -80,11 +81,13 @@ describe("helpers", () => {
 describe("listItems", () => {
   const items = listItems();
 
-  it("covers every content type in the repository", () => {
-    expect(items.length).toBeGreaterThan(10);
-    for (const kind of ["note", "project", "problem", "musing", "reading", "video"]) {
-      expect(items.some((i) => i.kind === kind)).toBe(true);
-    }
+  it("lists every kind, and the per-kind listings partition the whole", () => {
+    // Which kinds currently hold content is the author's business; that the
+    // listing accounts for all of it, once each, is the store's.
+    const perKind = CONTENT_KINDS.flatMap((kind) => listItems(kind));
+    expect(perKind.map((i) => `${i.kind}:${i.slug}`).sort()).toEqual(
+      items.map((i) => `${i.kind}:${i.slug}`).sort(),
+    );
   });
 
   it("reports the file each item lives in", () => {
@@ -117,9 +120,22 @@ describe("saveItem", () => {
   });
 
   it("refuses a slug already used by another content type", () => {
-    const existing = listItems("problem")[0];
-    expect(existing).toBeTruthy();
-    const result = saveItem("note", existing!.slug, frontmatter, "Body.");
+    // Own fixture rather than whatever happens to be published: the rule is
+    // global slug uniqueness, not the presence of any particular post.
+    expect(saveItem("note", SLUG, frontmatter, "Body.").ok).toBe(true);
+    const result = saveItem(
+      "problem",
+      SLUG,
+      {
+        title: "Clash",
+        prompt: "Does the store refuse a slug that a note already holds?",
+        date: "2026-01-01",
+        topic: "Probability",
+        difficulty: "warmup",
+        draft: true,
+      },
+      "Body.",
+    );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain("already used");
   });

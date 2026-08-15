@@ -1,0 +1,579 @@
+---
+title: "The Dupire Equation"
+slug: "the-dupire-equation"
+description: "A brief explanation of local volatility: what Dupire's equation says, a derivation through the forward Kolmogorov equation, what the model is actually for, and where it breaks down."
+date: "2026-08-15"
+type: "explainer"
+domains: ["markets", "mathematics"]
+tags:
+  [
+    "local-volatility",
+    "dupire",
+    "options",
+    "volatility",
+    "breeden-litzenberger",
+    "kolmogorov",
+  ]
+related: ["notes/dynamic-pricing-models-and-iv-surface-parameterisations"]
+---
+
+## A brief explanation of local volatility
+
+Local volatility gives the instantaneous underlying volatility
+$\sigma_\text{loc}(S_t,t)$, where $S_t$ is the underlying spot at time $t$.
+Unlike Black–Scholes implied volatility $\sigma_{\mathrm{BS}}(K,T)$, local
+volatility does not depend on the particular option used to _express_ the
+underlying; every option is priced using the same instantaneous underlying
+local-volatility function. Hence, local volatility provides a state-dependent
+description of the underlying's instantaneous volatility, which should not
+itself depend on the option being priced.
+
+Implied volatility is the constant Black–Scholes volatility that reproduces an
+option's market price, whereas local volatility describes the _instantaneous_
+volatility implied by the entire option surface. Schematically, the reader may
+find the following heuristic helpful:
+
+$$
+\text{local variance}
+\xrightarrow[\text{aggregate across paths and time}]{\mathbb{Q}}
+\text{option-implied variance}.
+$$
+
+For a variance-swap-style measure of implied variance, this relationship can be
+written more precisely as
+
+$$
+\text{implied variance}
+\approx
+\mathbb{E}_0^\mathbb{Q}[RV_{0,T}]
+=
+\mathbb{E}_0^\mathbb{P}[RV_{0,T}]
++
+\text{variance risk premium},
+$$
+
+where $\mathbb{E}_0^\mathbb{P}[RV_{0,T}]$ is the physical expected realised
+variance from now ($t=0$) to maturity $T$. The final equality uses the
+convention that the variance risk premium is the risk-neutral expectation minus
+the physical expectation.
+
+## The Dupire Equation
+
+The Dupire Equation is the standard way to infer local volatility from a
+complete European option surface. It is the volatility that satisfies the
+diffusion
+
+$$
+dS_t
+=
+(r-q)S_t\,dt
++
+\sigma_\text{loc}(S_t,t)S_t\,dW_t^\mathbb{Q},
+$$
+
+where $r$ is the constant risk-free rate, $q$ is the dividend yield, and
+$dW_t^\mathbb{Q}$ is the Brownian increment under risk-neutral dynamics.
+Solving the corresponding forward equation for a European call price $C$,
+strike $K$, and maturity $T$ gives
+
+$$
+\sigma_\text{loc}^2(K,T)
+=
+\frac{
+\partial_T C+(r-q)K\partial_K C+qC
+}{
+\frac{1}{2}K^2\partial_{KK}C
+}.
+$$
+
+[^coords]
+
+[^coords]:
+    The keen-eyed reader may notice that local volatility is given here as a
+    function of $K$ and $T$, unlike its normal expression as a function of $S_t$
+    and $t$. We must _calibrate_ local volatility as $\sigma_\text{loc}(K,T)$
+    because we are using a market-implied option surface indexed by strike and
+    maturity. However, _after_ calibration, we reinterpret the coordinates
+    $(K,T)$ as the future state and time $(S_t,t)$. Hence,
+    $\sigma_\text{loc}(S_t,t)$ is the same numerical surface evaluated with
+    differently named coordinates.
+
+For zero rates and dividends, Dupire simplifies to its more recognised form:
+
+$$
+\sigma_\text{loc}^2(K,T)
+=
+\frac{2\partial_T C}{K^2\partial_{KK}C}.
+$$
+
+Clearly, ensuring a _smooth_ and _complete_ option-price surface in tenor and
+strike is necessary to calculate $\partial_T C$ and $\partial_{KK}C$. For
+sparse and noisy market option prices, we would first need to fit a smooth,
+arbitrage-free Black–Scholes implied volatility surface, such as SVI or SSVI,
+to market quotes (which may themselves be quoted in tenor and delta) before
+applying Dupire. This fitting procedure itself introduces further modelling
+assumptions. I find the following rubric helpful:
+
+$$
+\text{observed option prices}
+\longrightarrow
+\text{BS implied vol}
+\longrightarrow
+\text{SVI/SSVI surface}
+\longrightarrow
+\text{Dupire local vol}.
+$$
+
+Like Black–Scholes, Heston, and jump-diffusion models, the local-volatility
+model is a dynamic pricing model. However, unlike Heston and jump-diffusion
+models, its volatility is a _deterministic_ function of the underlying's spot
+and time; unlike Black–Scholes volatility, it is _state-dependent_.
+
+## Derivation
+
+I find the following derivation to be the most intuitive and simple, although
+there are other equally rigorous and valid proofs. Feel free to comment with
+any better formulations.
+
+The general idea is to use the forward Kolmogorov equation to connect the
+risk-neutral probability density to the option-price surface, and then express
+this density in terms of derivatives of the option price to obtain local
+volatility:
+
+$$
+\boxed{
+\begin{gathered}
+\text{local-volatility SDE}
+\longrightarrow
+\text{forward Kolmogorov equation}
+\longrightarrow
+\text{risk-neutral density}\\
+\longrightarrow
+\text{call-price derivatives}
+\longrightarrow
+\text{Dupire equation}
+\end{gathered}
+}
+$$
+
+First, the risk-neutral local-volatility diffusion is given by
+
+$$
+dS_t
+=
+(r-q)S_t\,dt
++
+\sigma_\text{loc}(S_t,t)S_t\,dW_t^\mathbb{Q}.
+$$
+
+Let
+
+$$
+f(s,t)
+$$
+
+be the risk-neutral PDF of $S_t=s$. We know that, for a general diffusion
+
+$$
+dX_t
+=
+\mu(X_t,t)\,dt
++
+a(X_t,t)\,dW_t,
+$$
+
+the forward Kolmogorov equation[^kolmogorov] is
+
+[^kolmogorov]:
+    For a full treatment, see
+    [this derivation by Oliver Bühler](https://cims.nyu.edu/~obuhler/Oliver_Buhler/Teaching_12_Spring_files/PDEfinance12notes1.pdf).
+
+$$
+\frac{\partial f}{\partial t}
+=
+-\frac{\partial}{\partial x}(\mu f)
++
+\frac{1}{2}\frac{\partial^2}{\partial x^2}(a^2f).
+$$
+
+Applying the forward Kolmogorov equation, where
+
+$$
+\mu=(r-q)s,
+\qquad
+a=\sigma_\text{loc}(s,T)s,
+$$
+
+yields
+
+$$
+\frac{\partial f}{\partial T}
+=
+-\frac{\partial}{\partial s}
+\left[(r-q)sf(s,T)\right]
++
+\frac{1}{2}\frac{\partial^2}{\partial s^2}
+\left[
+\sigma_\text{loc}^2(s,T)s^2f(s,T)
+\right].
+$$
+
+Next, for a European call with strike $K$ and maturity $T$, its price is given
+by the present value of its risk-neutral expected payoff:
+
+$$
+C(K,T)
+=
+\exp(-rT)
+\mathbb{E}^{\mathbb{Q}}\left[(S_T-K)^+\right],
+$$
+
+which we can rewrite in terms of the PDF $f$ as
+
+$$
+C(K,T)
+=
+\exp(-rT)
+\int_K^\infty (s-K)f(s,T)\,ds.
+$$
+
+Slightly cheating, we know that the Dupire Equation involves $\partial_T C$ and
+$\partial_{KK}C$, so naturally, it makes sense to differentiate the above
+expression with respect to $T$ and twice with respect to $K$.
+
+### 1. Differentiate w.r.t. $K$
+
+$$
+\partial_K C
+=
+\exp(-rT)
+\frac{\partial}{\partial K}
+\int_K^\infty (s-K)f(s,T)\,ds.
+$$
+
+By Leibniz's integral rule (otherwise known as DUThIS, ifykyk),
+
+$$
+\partial_K C
+=
+-\exp(-rT)
+\int_K^\infty f(s,T)\,ds.
+$$
+
+The integral is the risk-neutral survival probability evaluated at $K$, so
+
+$$
+\partial_K C
+=
+-\exp(-rT)
+\mathbb{P}^{\mathbb{Q}}(S_T>K).
+$$
+
+Differentiating again yields the extremely useful and famous
+Breeden–Litzenberger relation:
+
+$$
+\partial_{KK}C
+=
+\exp(-rT)f(K,T).
+$$
+
+### 2. Differentiate w.r.t. $T$
+
+This is slightly more difficult because of the dependence on $T$ in $f(s,T)$.
+As before,
+
+$$
+\partial_T C
+=
+\frac{\partial}{\partial T}
+\left[
+\exp(-rT)
+\int_K^\infty (s-K)f(s,T)\,ds
+\right],
+$$
+
+which we can evaluate with the product rule:
+
+$$
+\partial_T C
+=
+-rC
++
+\exp(-rT)
+\int_K^\infty
+(s-K)\frac{\partial f}{\partial T}\,ds.
+$$
+
+Substituting the forward Kolmogorov expression for $\partial_T f$ yields
+
+$$
+\begin{aligned}
+\partial_T C
+={}&-rC\\
+&\underbrace{
+-(r-q)\exp(-rT)
+\int_K^\infty
+(s-K)
+\frac{\partial}{\partial s}
+\left[sf(s,T)\right]\,ds
+}_{\text{drift term}}\\
+&+
+\underbrace{
+\frac{1}{2}\exp(-rT)
+\int_K^\infty
+(s-K)
+\frac{\partial^2}{\partial s^2}
+\left[
+\sigma_\text{loc}^2(s,T)s^2f(s,T)
+\right]\,ds
+}_{\text{diffusion term}}.
+\end{aligned}
+$$
+
+#### 2.1. Drift integral
+
+Integrating by parts once, and assuming the relevant boundary terms vanish as
+$s\to\infty$, gives
+
+$$
+\begin{aligned}
+&-\int_K^\infty
+(s-K)
+\frac{\partial}{\partial s}
+\left[sf(s,T)\right]\,ds\\
+&\quad=
+-\left[
+(s-K)sf(s,T)
+\right]_K^\infty
++
+\int_K^\infty sf(s,T)\,ds\\
+&\quad=
+\int_K^\infty sf(s,T)\,ds.
+\end{aligned}
+$$
+
+We can split $s=(s-K)+K$:
+
+$$
+\int_K^\infty sf(s,T)\,ds
+=
+\int_K^\infty (s-K)f(s,T)\,ds
++
+K\int_K^\infty f(s,T)\,ds.
+$$
+
+Using the expressions for $C$ and $\partial_K C$,
+
+$$
+\exp(-rT)
+\int_K^\infty sf(s,T)\,ds
+=
+C-K\partial_K C.
+$$
+
+Therefore, the drift term is
+
+$$
+(r-q)\left(C-K\partial_K C\right).
+$$
+
+#### 2.2. Diffusion integral
+
+Define
+
+$$
+g(s,T)
+=
+\sigma_\text{loc}^2(s,T)s^2f(s,T).
+$$
+
+Integrating by parts twice, again assuming the relevant boundary terms vanish,
+gives
+
+$$
+\begin{aligned}
+\int_K^\infty
+(s-K)\frac{\partial^2g}{\partial s^2}\,ds
+&=
+\left[
+(s-K)\frac{\partial g}{\partial s}
+\right]_K^\infty
+-
+\int_K^\infty
+\frac{\partial g}{\partial s}\,ds\\
+&=
+-\left[g(s,T)\right]_K^\infty\\
+&=
+g(K,T).
+\end{aligned}
+$$
+
+Therefore, the diffusion term is
+
+$$
+\frac{1}{2}\exp(-rT)
+\sigma_\text{loc}^2(K,T)K^2f(K,T).
+$$
+
+By the Breeden–Litzenberger relation,
+
+$$
+\exp(-rT)f(K,T)
+=
+\partial_{KK}C,
+$$
+
+so the diffusion term becomes
+
+$$
+\frac{1}{2}
+\sigma_\text{loc}^2(K,T)K^2\partial_{KK}C.
+$$
+
+Combining the drift and diffusion terms, we obtain
+
+$$
+\partial_T C
+=
+-rC
++
+(r-q)\left(C-K\partial_K C\right)
++
+\frac{1}{2}
+\sigma_\text{loc}^2(K,T)K^2\partial_{KK}C.
+$$
+
+Since
+
+$$
+-rC+(r-q)C=-qC,
+$$
+
+this becomes
+
+$$
+\partial_T C
+=
+-qC
+-
+(r-q)K\partial_K C
++
+\frac{1}{2}
+\sigma_\text{loc}^2(K,T)K^2\partial_{KK}C.
+$$
+
+Rearranging finally gives the Dupire Equation:
+
+$$
+\boxed{
+\sigma_\text{loc}^2(K,T)
+=
+\frac{
+\partial_T C+(r-q)K\partial_K C+qC
+}{
+\frac{1}{2}K^2\partial_{KK}C
+}
+}.
+$$
+
+Finally, after calibrating local volatility on the $(K,T)$ grid, we reinterpret
+strike as the possible future spot state and maturity as future time:
+
+$$
+\sigma_\text{loc}(s,t)
+=
+\left.
+\sigma_\text{loc}(K,T)
+\right|_{K=s,\,T=t}.
+$$
+
+This gives the instantaneous volatility used when the underlying reaches state
+$S_t=s$ at time $t$.
+
+## Use
+
+My trading desk did not seem especially keen on local volatility, and indeed,
+this article is much more an academic exercise than a practical guide.
+
+Fundamentally, local volatility allows us to express instantaneous volatility
+as a function of the underlying spot $S_t$ and time $t$. This gives us the
+flexibility to price path-dependent and exotic options within a model that
+remains consistent with the observed European vanilla surface. Black–Scholes
+can also be used to price some exotic options, but its assumption of constant
+volatility prevents it from reproducing the observed volatility smile.
+
+Unlike realised volatility, which is calculated from an observed path under the
+physical measure $\mathbb{P}$, local volatility is inferred from option prices
+under the risk-neutral measure $\mathbb{Q}$. It therefore gives us an
+instantaneous volatility function which, under the local-volatility diffusion,
+reproduces the entire observed (or SVI-interpolated) European option surface.
+
+It is important to note that we use the European option surface only to
+_calibrate_ Dupire local volatility to observed vanilla prices. This _does not_
+mean that an option subsequently priced under the model must itself be
+European. Once the local-volatility function has been calibrated, we can
+simulate the resulting risk-neutral dynamics and use them to price other,
+potentially path-dependent, payoffs. Hence, we can think of Dupire as a
+convenient mathematical tool for tuning a particular model of the underlying's
+risk-neutral dynamics to observed European option prices, which can then be
+applied to other options.
+
+## Limitations
+
+The principal limitation of local volatility is that fitting today's European
+option surface does not ensure that the model correctly describes the
+underlying's future dynamics. Dupire guarantees that, for every calibrated
+maturity $T$, the model reproduces the market-implied marginal risk-neutral
+distribution of $S_T$. In other words, if the input surface is complete and
+arbitrage-free, the model does _not_ predict the wrong terminal PDF at a
+calibrated maturity. However, vanilla prices determine only these marginal
+distributions; they do not uniquely determine the joint distribution of the
+underlying across time, its transition probabilities, or the paths taken
+between today and maturity. Local volatility imposes one particular set of path
+dynamics among many models that could fit exactly the same vanilla surface.
+
+This distinction is relatively unimportant for European options, whose payoffs
+depend only on $S_T$, but is crucial for exotic options whose payoffs depend on
+the path of the underlying. Such options may be mispriced even when the
+local-volatility model fits every observed vanilla option perfectly. Hence,
+while local volatility "one-ups" Black–Scholes by reproducing the vanilla smile
+within a model that can price exotics, its path and smile dynamics may be less
+realistic than those of stochastic-volatility models such as Heston.
+
+A related problem is that local volatility generally produces unrealistic smile
+dynamics. Because volatility is a deterministic function of spot and time,
+
+$$
+\sigma_t=\sigma_\text{loc}(S_t,t),
+$$
+
+the model contains no source of volatility randomness independent of the
+underlying. Conditional on time, volatility changes are mechanically linked to
+changes in spot, so the model cannot represent independent volatility shocks or
+stochastic changes in the shape of the smile. In practice, the future
+implied-volatility surface may therefore evolve very differently from the
+dynamics implied by today's local-volatility surface.
+
+Local volatility is also numerically unstable because it requires
+$\partial_T C$, $\partial_K C$, and especially $\partial_{KK}C$, all of which
+amplify noise. Hence, small errors in observed prices or in the fitted SVI/SSVI
+surface can create large changes in the inferred local volatility. A smooth and
+arbitrage-free input surface is therefore essential for obtaining stable
+results.
+
+Furthermore, an exact fit to current vanilla prices does not imply that the
+model will remain calibrated. As spot, time, and market expectations change,
+the observed implied-volatility surface also changes. A local-volatility
+surface calibrated today is deterministic and does not automatically adapt to
+these new market conditions; in practice, it must be recalibrated frequently.
+Consequently, local volatility may hedge vanilla options reasonably well
+against small spot movements while producing unreliable vega, volga, and
+forward-smile exposures for more complex products.
+
+Finally, the standard Dupire model assumes continuous diffusion dynamics,
+deterministic rates and dividends, and no jumps. These assumptions may be
+inadequate for assets subject to earnings announcements, defaults, policy
+decisions, or other discontinuous moves. Extensions can incorporate these
+factors, although these would be different, and more complicated, local
+volatility models.

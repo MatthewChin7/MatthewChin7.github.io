@@ -5,3 +5,7 @@ playwright-report
 test-results
 public/search-index.json
 public/resume.pdf
+
+# Machine-written recovery records — not source, and reformatting them
+# adds noise to every diff the studio produces.
+content/.trash

@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { buildSearchIndex } from "@/lib/search/index";
 import { querySearchIndex } from "@/lib/search/query";
+import { contentId, getAllContent } from "@/lib/content/load";
 
 describe("search index", () => {
   const docs = buildSearchIndex();
 
-  it("indexes all content kinds plus topics and pages", () => {
-    const types = new Set(docs.map((d) => d.type));
-    expect(types.has("project")).toBe(true);
-    expect(types.has("note")).toBe(true);
-    expect(types.has("musing")).toBe(true);
-    expect(types.has("topic")).toBe(true);
-    expect(types.has("page")).toBe(true);
+  it("indexes every published item, plus the static pages", () => {
+    const ids = new Set(docs.map((d) => d.id));
+    for (const item of getAllContent()) {
+      expect(ids.has(contentId(item)), `missing ${contentId(item)}`).toBe(true);
+    }
+    // Pages are not content files, so they are always in the index.
+    expect(docs.some((d) => d.type === "page")).toBe(true);
   });
 
   it("has no duplicate ids", () => {
@@ -23,9 +24,11 @@ describe("search index", () => {
 describe("querySearchIndex", () => {
   const docs = buildSearchIndex();
 
-  it("finds a project by title prefix", () => {
-    const results = querySearchIndex(docs, "building a btc");
-    expect(results[0]?.doc.id).toBe("work/btc-vol-surface");
+  it("finds an item by a prefix of its title", () => {
+    const target = docs.find((d) => d.type === "note")!;
+    const prefix = target.title.toLowerCase().split(/\s+/).slice(0, 3).join(" ");
+    const results = querySearchIndex(docs, prefix);
+    expect(results[0]?.doc.id).toBe(target.id);
   });
 
   it("ranks title matches above body matches", () => {
@@ -35,8 +38,9 @@ describe("querySearchIndex", () => {
   });
 
   it("matches tags", () => {
-    const results = querySearchIndex(docs, "svi");
-    expect(results.some((r) => r.doc.id === "work/btc-vol-surface")).toBe(true);
+    const tagged = docs.find((d) => d.tags.length > 0)!;
+    const results = querySearchIndex(docs, tagged.tags[0]!);
+    expect(results.some((r) => r.doc.id === tagged.id)).toBe(true);
   });
 
   it("requires all terms to match", () => {

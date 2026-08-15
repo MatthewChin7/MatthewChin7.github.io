@@ -97,8 +97,37 @@
   smaller surface than a relay to operate.
 - **D-024 Routes that cannot be exported are excluded by config, not by
   deleting files in CI.** `next.config.ts` drives `pageExtensions`, so the
-  dev-only authoring API (`route.dev.ts`) and the videos detail route
-  (`page.video.tsx`, until a video is published) are simply not routes in
-  a static build. A local `STATIC_EXPORT=1 pnpm build` therefore produces
-  exactly what the workflow publishes, and the videos route returns on its
-  own the moment real content justifies it.
+  dev-only authoring API (`route.dev.ts`) and every content detail route
+  (`page.<kind>.tsx`) are simply not routes in a static build unless they
+  have something to render. `output: export` rejects a dynamic route that
+  prerenders zero pages, and drafts never prerender — so without this,
+  emptying a section from the hosted studio would turn the deploy red.
+  A local `STATIC_EXPORT=1 pnpm build` produces exactly what the workflow
+  publishes, and a route returns on its own the moment content justifies it.
+- **D-025 Open Graph cards are site-wide, not per post.** Per-item cards
+  have to live inside the dynamic segment they describe, where D-024's
+  gate cannot reach them: Next resolves metadata files (`opengraph-image`)
+  by its own convention and ignores custom page extensions, so an empty
+  section would break the export. One card at the site root, inherited by
+  every page, costs a little sharing polish and removes a whole class of
+  build failure.
+- **D-026 The hosted studio batches edits into one commit.** Every commit
+  triggers a rebuild and a redeploy, so committing per save made deleting
+  five posts cost five deploys. Writes now accumulate in the tab's working
+  copy and go up together when the author presses Publish. The cost is that
+  unpublished work lives only in that tab, so the studio states it in the
+  admin bar, warns on tab close, and warns again on disconnect.
+- **D-027 Deleting an item takes its inbound links with it.** A `related`
+  id pointing at something that no longer exists fails
+  `pnpm validate:content`, and therefore the build — which, from the hosted
+  studio, means a red deploy minutes after an apparently successful delete.
+  `deleteItem` now strips the deleted id from every item that referenced it
+  and records those items on the trash entry, so restoring returns the post
+  to the graph rather than to an island.
+- **D-028 Tests assert behaviour, not the current contents of the archive.**
+  Unit and e2e tests used to name specific posts, so retiring one turned the
+  suite red for no real reason. They now find their subject through the
+  section index and skip when a section is empty. Content-shaped assertions
+  (counts, particular slugs) were replaced with invariants: every item gets
+  derived fields, every declared relation becomes a weight-3 edge, every
+  plotted Atlas node appears in the accessible index.

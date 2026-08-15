@@ -1,14 +1,29 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("signal atlas", () => {
-  test("index fallback lists every node group", async ({ page }) => {
+  test("index fallback lists every node in the graph", async ({ page }) => {
     await page.goto("/atlas");
     const index = page.locator("#atlas-index");
     await expect(index).toBeVisible();
-    await expect(index.getByRole("heading", { name: /Markets/ })).toBeVisible();
-    await expect(
-      index.getByRole("link", { name: /BTC Implied-Volatility/ }),
-    ).toBeVisible();
+    // The index is the accessible surface: every node the graph plots has to
+    // be listed there too, whatever the archive currently holds. Node labels
+    // read "Note: Some Title", so the title is the part after the colon.
+    const plotted = await page
+      .locator('svg [role="link"]')
+      .evaluateAll((els) =>
+        els.map((e) =>
+          e.getAttribute("aria-label")!.split(":").slice(1).join(":").trim(),
+        ),
+      );
+    const listed = await index.getByRole("link").allInnerTexts();
+    expect(plotted.length).toBeGreaterThan(0);
+    for (const title of plotted) {
+      const bare = title.replace(/,\s*\d{4}$/, "");
+      expect(
+        listed.some((text) => text.includes(bare)),
+        `"${bare}" plotted but not listed in the index`,
+      ).toBe(true);
+    }
   });
 
   test("graph supports keyboard exploration and Enter opens content", async ({

@@ -1,15 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { buildGraph } from "@/lib/atlas/build-graph";
+import { contentId, getAllContent } from "@/lib/content/load";
 import { computeLayouts, VIEW_W, VIEW_H } from "@/lib/atlas/layout";
 
 describe("buildGraph", () => {
   const graph = buildGraph();
 
-  it("creates nodes for real content plus topic nodes", () => {
-    expect(graph.nodes.length).toBeGreaterThan(10);
-    expect(graph.nodes.some((n) => n.type === "project")).toBe(true);
-    expect(graph.nodes.some((n) => n.type === "article")).toBe(true);
-    expect(graph.nodes.some((n) => n.type === "topic")).toBe(true);
+  it("creates a node for every published item, plus topic nodes", () => {
+    const items = getAllContent();
+    expect(graph.nodes.length).toBeGreaterThanOrEqual(items.length);
+    for (const item of items) {
+      expect(graph.nodes.some((n) => n.id === contentId(item))).toBe(true);
+    }
+    // Topics are derived, so they only appear once a tag is shared.
+    const shared = new Map<string, number>();
+    for (const item of items) {
+      for (const tag of item.tags) shared.set(tag, (shared.get(tag) ?? 0) + 1);
+    }
+    const expectedTopics = [...shared.values()].filter((n) => n >= 2).length;
+    expect(graph.nodes.filter((n) => n.type === "topic")).toHaveLength(expectedTopics);
   });
 
   it("gives every node the required fields", () => {
@@ -23,13 +32,22 @@ describe("buildGraph", () => {
   });
 
   it("creates explicit-related edges with top weight", () => {
-    const e = graph.edges.find(
-      (edge) =>
-        [edge.source, edge.target].includes("work/btc-vol-surface") &&
-        [edge.source, edge.target].includes("notes/realized-vs-implied-volatility"),
+    // Every relation an item declares must become an edge of weight 3,
+    // whichever items currently declare one.
+    const declared = getAllContent().flatMap((item) =>
+      "related" in item && Array.isArray(item.related)
+        ? item.related.map((target) => [contentId(item), target] as const)
+        : [],
     );
-    expect(e).toBeDefined();
-    expect(e!.weight).toBe(3);
+    expect(declared.length).toBeGreaterThan(0);
+    for (const [source, target] of declared) {
+      const edge = graph.edges.find(
+        (e) =>
+          [e.source, e.target].includes(source) && [e.source, e.target].includes(target),
+      );
+      expect(edge, `no edge for ${source} → ${target}`).toBeDefined();
+      expect(edge!.weight).toBe(3);
+    }
   });
 
   it("only creates edges between existing nodes", () => {

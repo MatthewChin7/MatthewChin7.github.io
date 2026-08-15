@@ -123,6 +123,19 @@ describe("the store over a memory filesystem", () => {
     draft: true,
   };
 
+  const project = {
+    title: "Doomed",
+    description: "A project fixture written by the memory-store test.",
+    question: "Does deleting this take its inbound links with it?",
+    year: 2026,
+    date: "2026-01-01",
+    status: "draft",
+    role: "Sole researcher",
+    domains: ["mathematics"],
+    methods: ["optimization"],
+    draft: true,
+  };
+
   it("saves, lists and reads a note, staging exactly one file for commit", () => {
     const vfs = new MemoryVfs();
     const store = createStore(vfs);
@@ -173,19 +186,54 @@ describe("the store over a memory filesystem", () => {
     expect(store.listTrash()).toHaveLength(0);
   });
 
+  it("takes inbound related links with it on delete, and puts them back on restore", () => {
+    const store = createStore(new MemoryVfs());
+    store.saveItem("project", "doomed-project", project, "Body.");
+    store.saveItem(
+      "note",
+      "pointing-note",
+      { ...frontmatter, related: ["work/doomed-project"] },
+      "Body prose here.",
+    );
+    expect(store.readItem("note", "pointing-note")?.frontmatter.related).toEqual([
+      "work/doomed-project",
+    ]);
+
+    // A dangling related id fails content validation, which fails the build.
+    store.deleteItem("project", "doomed-project");
+    expect(store.readItem("note", "pointing-note")?.frontmatter.related).toBeUndefined();
+
+    const trashed = store.listTrash()[0]!;
+    expect(store.restoreTrash(trashed.id).ok).toBe(true);
+    expect(store.readItem("note", "pointing-note")?.frontmatter.related).toEqual([
+      "work/doomed-project",
+    ]);
+  });
+
+  it("leaves unrelated links alone when pruning", () => {
+    const store = createStore(new MemoryVfs());
+    store.saveItem("project", "doomed-project", project, "Body.");
+    store.saveItem("note", "other-note", frontmatter, "Body prose here.");
+    store.saveItem(
+      "note",
+      "pointing-note",
+      { ...frontmatter, related: ["notes/other-note", "work/doomed-project"] },
+      "Body prose here.",
+    );
+
+    store.deleteItem("project", "doomed-project");
+    expect(store.readItem("note", "pointing-note")?.frontmatter.related).toEqual([
+      "notes/other-note",
+    ]);
+  });
+
   it("keeps slugs unique across content types", () => {
     const store = createStore(new MemoryVfs());
     store.saveItem("note", "shared-slug", frontmatter, "Body prose here.");
     const clash = store.saveItem(
       "project",
       "shared-slug",
-      {
-        title: "Clash",
-        description: "d",
-        date: "2026-01-01",
-        status: "draft",
-        draft: true,
-      },
+      { ...project, title: "Clash" },
       "Body.",
     );
     expect(clash.ok).toBe(false);
