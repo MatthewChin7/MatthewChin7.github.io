@@ -19,5 +19,11 @@ tests/e2e/__screenshots__/**/*-actual.png
 # env
 .env*.local
 
+# The admin studio's recovery buffer (content/.trash) is deliberately NOT
+# ignored. The hosted studio commits deletes through the GitHub API, and a
+# trash that never leaves one browser tab would make "delete" irreversible on
+# the next reload. Nothing reads it — the loaders and the validator take named
+# content directories and .mdx files only — so it never reaches the site.
+
 # misc
 .DS_Store

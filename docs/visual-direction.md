@@ -125,6 +125,20 @@ data nodes · one notched corner (a 10px 45° clip) reserved for featured
 items · bracket marks `[ ]` around coordinates. Border-radius is 2px or 0
 almost everywhere; no card soup.
 
+## Statement callouts
+
+Definitions, theorems, lemmas, corollaries, propositions, examples, remarks,
+questions and key ideas render as **rectangular tinted frames**: a 1px border
+in the statement's accent at 42% alpha over a 7% (day) / 13% (night) tint of
+the same hue, no radius, no shadow. The mono uppercase label carries the accent
+colour and always names the kind in words, so colour is never the only signal;
+every label clears 4.5:1 against its own tint in both modes.
+
+One hue per kind, from the `--c-*` tokens: theorem and proposition violet,
+lemma indigo, corollary teal, definition cobalt, example green, remark grey,
+question rust, key idea amber. Key ideas are the one informal box — they carry
+a 💡, stay unnumbered, and set upright rather than italic.
+
 ## Motifs
 
 1. Coordinates `[02.04]` — plate.item, monospaced, muted.

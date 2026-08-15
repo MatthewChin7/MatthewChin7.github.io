@@ -1,8 +1,5 @@
 import Link from "next/link";
-import { MCMonogram } from "@/components/ui/mc-monogram";
 import { site, sections } from "@/lib/site/config";
-
-const buildDate = new Date().toISOString().slice(0, 10);
 
 export function Footer() {
   const socials = [
@@ -12,86 +9,75 @@ export function Footer() {
   ].filter((s) => s.url.length > 0);
 
   return (
-    <footer data-site-footer className="mt-24 border-t border-rule">
-      <div className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 lg:px-[6vw]">
-        <div className="grid gap-10 md:grid-cols-12">
-          <div className="md:col-span-5">
-            <p className="type-display max-w-[16ch]">
-              Interesting problem? <em className="text-signal">Write to me.</em>
-            </p>
+    <footer data-site-footer>
+      {/* Footer widget area — WP default themes expose 2–3 widget columns */}
+      <div className="border-t border-rule bg-bg">
+        <div className="wp-inner grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
+          <section className="wp-widget">
+            <h2 className="wp-widget-title">About</h2>
+            <p className="text-sm leading-relaxed text-muted">{site.description}</p>
             <a
               href={`mailto:${site.email}`}
-              className="type-mono-meta link-editorial mt-4 inline-block text-muted"
+              className="mt-3 inline-block text-sm text-signal hover:underline"
             >
               {site.email}
             </a>
-          </div>
+          </section>
 
-          <nav aria-label="Footer" className="md:col-span-4">
-            <h2 className="type-mono-label mb-3 text-faint">Index</h2>
-            <ul className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-              {sections.map((s) => (
-                <li key={s.id}>
-                  <Link
-                    href={s.href}
-                    className="type-mono-meta text-muted transition-colors duration-[var(--t-micro)] hover:text-fg"
-                  >
-                    <span className="text-faint">[{s.coordinate}]</span> {s.label}
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <Link
-                  href="/search"
-                  className="type-mono-meta text-muted transition-colors duration-[var(--t-micro)] hover:text-fg"
-                >
-                  <span className="text-faint">[·]</span> Search
-                </Link>
-              </li>
-              <li>
-                <a
-                  href="/feed.xml"
-                  className="type-mono-meta text-muted transition-colors duration-[var(--t-micro)] hover:text-fg"
-                >
-                  <span className="text-faint">[·]</span> RSS
-                </a>
-              </li>
+          <nav aria-label="Footer" className="wp-widget">
+            <h2 className="wp-widget-title">Pages</h2>
+            <ul>
+              {sections
+                .filter((s) => s.primary)
+                .map((s) => (
+                  <li key={s.id}>
+                    <Link href={s.href}>{s.label}</Link>
+                  </li>
+                ))}
             </ul>
           </nav>
 
-          <div className="md:col-span-3">
-            <h2 className="type-mono-label mb-3 text-faint">Elsewhere</h2>
+          <section className="wp-widget">
+            <h2 className="wp-widget-title">Meta</h2>
+            <ul>
+              <li>
+                <Link href="/contact">Contact</Link>
+              </li>
+              <li>
+                <Link href="/resume">CV</Link>
+              </li>
+              <li>
+                <Link href="/search">Search</Link>
+              </li>
+              <li>
+                <a href="/feed.xml">Entries feed (RSS)</a>
+              </li>
+            </ul>
+          </section>
+
+          <section className="wp-widget">
+            <h2 className="wp-widget-title">Elsewhere</h2>
             {socials.length > 0 ? (
-              <ul className="space-y-1.5">
+              <ul>
                 {socials.map((s) => (
                   <li key={s.label}>
-                    <a
-                      href={s.url}
-                      rel="me noopener noreferrer"
-                      target="_blank"
-                      className="type-mono-meta link-editorial text-muted"
-                    >
+                    <a href={s.url} rel="me noopener noreferrer" target="_blank">
                       {s.label}
                     </a>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="type-mono-meta text-faint">Profiles forthcoming.</p>
+              <p className="text-sm text-faint">Profiles forthcoming.</p>
             )}
-          </div>
+          </section>
         </div>
+      </div>
 
-        <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-rule pt-5">
-          <span className="flex items-center gap-2.5 text-muted">
-            <MCMonogram size={18} />
-            <span className="type-mono-meta">
-              © {new Date().getFullYear()} {site.name}
-            </span>
-          </span>
-          <span className="type-mono-meta text-faint">
-            {site.location} · Built {buildDate}
-          </span>
+      {/* Colophon */}
+      <div className="wp-colophon">
+        <div className="wp-inner py-6">
+          © {new Date().getFullYear()} {site.name} · {site.location}
         </div>
       </div>
     </footer>

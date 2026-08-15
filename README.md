@@ -33,9 +33,22 @@ All content lives in `content/` and is validated by Zod schemas
 
 Three ways to author:
 
-1. **`/admin` studio** — run `pnpm dev`, open `/admin`, fill a form.
-   Writes drafts into the repo and uploads (CV PDF → `public/resume.pdf`,
-   images → `public/images/`). Dev-only; production builds 404 there.
+1. **`/admin` studio** — create, edit, publish, duplicate, and trash any
+   content type; math posts can be written in the Overleaf-style LaTeX
+   editor (`content/latex/<slug>/`), which compiles to MDX on save.
+   Handles uploads too (CV PDF → `public/resume.pdf`, images →
+   `public/images/`). It runs in two places:
+   - **Locally** — `pnpm dev`, then `/admin`. Writes into the working
+     tree for you to review and commit.
+   - **On the deployed site** — `https://matthewchin7.github.io/admin`.
+     There is no server on GitHub Pages, so it commits to this repository
+     through the GitHub API instead, and the commit redeploys the site.
+     It is inert until given a token only you hold; see
+     [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+   A _server_ production build (`next start`) still 404s at `/admin` — a
+   Node deployment never carries a writable surface.
+
 2. **Scaffolding commands** — `pnpm new:note`, `pnpm new:project`,
    `pnpm new:musing` (interactive prompts).
 3. **By hand** — copy an existing file; `pnpm validate:content` tells you
@@ -69,15 +82,32 @@ intentionally with `pnpm exec playwright test --update-snapshots`.
 
 ## Deploy it
 
-Standard Next.js — deploys to Vercel with zero config (framework preset),
-or any Node host via `pnpm build && pnpm start`. Before the first real
-deploy:
+**GitHub Pages is the configured target.** Every push to `main` runs
+`.github/workflows/deploy.yml`, which builds a static export and
+publishes it to `https://matthewchin7.github.io`. Full setup steps,
+including the token the hosted studio needs, are in
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-1. Set the production domain in `lib/site/config.ts` (`site.url`) —
-   sitemap, RSS, canonicals, and OG URLs derive from it.
-2. Fill the `site.social` URLs (currently empty → hidden in the UI).
-3. Replace `public/resume.pdf` (placeholder) with the real CV.
-4. Optionally configure `site.analytics` (off by default; no tracking
+Reproduce exactly what CI builds:
+
+```bash
+STATIC_EXPORT=1 pnpm build   # → ./out
+```
+
+`STATIC_EXPORT=1` also switches the studio's backend to the GitHub API
+and drops the dev-only authoring route. Without it, `pnpm build` stays a
+regular server build (security headers intact) — that is what
+`pnpm start` and the e2e suite use.
+
+The site also still deploys to Vercel with zero config, or any Node host
+via `pnpm build && pnpm start`.
+
+Still outstanding before the site is fully "real":
+
+1. Fill the `site.social` URLs in `lib/site/config.ts` (currently empty →
+   hidden in the UI).
+2. Replace `public/resume.pdf` (placeholder) with the real CV.
+3. Optionally configure `site.analytics` (off by default; no tracking
    ships otherwise).
 
 ## Documentation

@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Container } from "@/components/layout/container";
-import { DomainMark, Tag, DraftMark } from "@/components/content/marks";
-import { RelatedContent } from "@/components/content/related-content";
+import { Sidebar } from "@/components/layout/sidebar";
+import { EngagementPanel } from "@/components/content/engagement-panel";
 import { ReadingProgress } from "@/components/content/reading-progress";
 import { TableOfContents } from "@/components/content/table-of-contents";
 import { getAllNotes, getNote } from "@/lib/content/load";
-import { relatedContent } from "@/lib/content/related";
 import { renderMdx } from "@/lib/content/mdx";
 import { extractToc } from "@/lib/content/toc";
-import { formatDate, formatDateCompact } from "@/lib/content/derive";
+import { formatDate } from "@/lib/content/derive";
 import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo/structured-data";
+import { domainLabels } from "@/lib/site/domains";
 import { site } from "@/lib/site/config";
 import "katex/dist/katex.min.css";
 
@@ -42,13 +41,6 @@ export async function generateMetadata({
   };
 }
 
-const typeLabels: Record<string, string> = {
-  essay: "Essay",
-  "research-note": "Research note",
-  explainer: "Explainer",
-  review: "Review",
-};
-
 export default async function NotePage({
   params,
 }: {
@@ -60,9 +52,8 @@ export default async function NotePage({
 
   const body = await renderMdx(note.body);
   const toc = extractToc(note.body);
-  const related = relatedContent(note);
 
-  // series navigation
+  // series navigation → WP previous/next post links
   const seriesNotes = note.series
     ? getAllNotes()
         .filter((n) => n.series === note.series)
@@ -90,7 +81,7 @@ export default async function NotePage({
               dateModified: note.updated,
             }),
             breadcrumbJsonLd([
-              { name: "Index", url: "/" },
+              { name: "Home", url: "/" },
               { name: "Notes", url: "/notes" },
               { name: note.title, url: `/notes/${note.slug}` },
             ]),
@@ -98,69 +89,37 @@ export default async function NotePage({
         }}
       />
       <article>
-        <header className="border-b border-rule">
-          <Container className="py-12">
-            <p className="type-mono-meta mb-5 text-faint">
-              <Link href="/notes" className="hover:text-fg">
-                [02] Notes
-              </Link>{" "}
-              / {typeLabels[note.type]}
-              {note.series ? (
-                <span className="text-annotation">
-                  {" "}
-                  · {note.series} — part {note.seriesOrder}
-                </span>
-              ) : null}
-              {note.draft ? (
-                <span className="ml-3">
-                  <DraftMark />
-                </span>
-              ) : null}
-            </p>
-            <h1 className="type-display-xl max-w-[22ch]">{note.title}</h1>
-            <p className="mt-5 max-w-[56ch] font-serif text-xl italic text-muted">
-              {note.description}
-            </p>
-            <dl className="type-mono-meta mt-6 flex flex-wrap gap-x-6 gap-y-1 text-faint">
-              <div className="flex gap-2">
-                <dt className="sr-only">Published</dt>
-                <dd>
-                  <time dateTime={note.date}>{formatDate(note.date)}</time>
-                </dd>
-              </div>
+        {/* Entry header */}
+        <header className="border-b border-rule bg-bg">
+          <div className="wp-inner py-10 text-center">
+            <h1 className="wp-entry-title mx-auto max-w-[22ch] text-3xl sm:text-[2.5rem]">
+              {note.title}
+            </h1>
+            {note.description ? (
+              <p className="mx-auto mt-4 max-w-[56ch] font-serif text-lg italic text-muted">
+                {note.description}
+              </p>
+            ) : null}
+            <div className="wp-entry-meta mt-5 justify-center">
+              <span>
+                Posted on <time dateTime={note.date}>{formatDate(note.date)}</time>
+              </span>
+              <span>
+                by <span className="text-fg">{site.name}</span>
+              </span>
               {note.updated ? (
-                <div className="flex gap-2">
-                  <dt>Updated</dt>
-                  <dd>
-                    <time dateTime={note.updated}>{formatDate(note.updated)}</time>
-                  </dd>
-                </div>
+                <span>
+                  Updated <time dateTime={note.updated}>{formatDate(note.updated)}</time>
+                </span>
               ) : null}
-              <div className="flex gap-2">
-                <dt className="sr-only">Reading time</dt>
-                <dd>{note.readingTime} min read</dd>
-              </div>
-              <div className="flex items-center gap-3">
-                <dt className="sr-only">Domains</dt>
-                {note.domains.map((d) => (
-                  <dd key={d}>
-                    <DomainMark domain={d} withLabel />
-                  </dd>
-                ))}
-              </div>
-            </dl>
-          </Container>
+              <span>{note.readingTime} min read</span>
+            </div>
+          </div>
         </header>
 
-        <Container className="py-12">
-          <div className="grid gap-12 lg:grid-cols-12">
-            <aside className="hidden lg:col-span-3 lg:block">
-              <div className="sticky top-24">
-                <TableOfContents entries={toc} />
-              </div>
-            </aside>
-
-            <div className="lg:col-span-8 lg:col-start-4 xl:col-span-7">
+        <div className="wp-inner py-10">
+          <div className="grid gap-12 lg:grid-cols-[1fr_18rem]">
+            <main>
               {toc.length > 0 ? (
                 <details className="mb-8 border border-rule px-4 py-3 lg:hidden">
                   <summary className="type-mono-label cursor-pointer text-muted">
@@ -178,14 +137,21 @@ export default async function NotePage({
                 </details>
               ) : null}
 
+              {/* Entry content — MDX with KaTeX math intact */}
               <div className="prose">{body}</div>
 
               {note.bibliography.length > 0 ? (
                 <section className="mt-12 border-t border-rule pt-6">
-                  <h2 className="type-mono-label mb-4 text-muted">References</h2>
+                  <h2 id="references" className="wp-widget-title">
+                    References
+                  </h2>
                   <ol className="space-y-2">
                     {note.bibliography.map((item, i) => (
-                      <li key={i} className="type-mono-meta flex gap-3 text-muted">
+                      <li
+                        key={i}
+                        id={`ref-${i + 1}`}
+                        className="type-mono-meta flex scroll-mt-24 gap-3 text-muted"
+                      >
                         <span className="text-faint">[{i + 1}]</span>
                         <span>{item}</span>
                       </li>
@@ -194,50 +160,60 @@ export default async function NotePage({
                 </section>
               ) : null}
 
-              {note.tags.length > 0 ? (
-                <p className="mt-10 flex flex-wrap gap-2">
-                  {note.tags.map((t) => (
-                    <Tag key={t} tag={t} />
+              {/* Entry footer — categories + tags */}
+              {(note.domains.length > 0 || note.tags.length > 0) && (
+                <footer className="mt-10 flex flex-wrap items-center gap-2 border-t border-rule pt-6">
+                  {note.domains.map((d) => (
+                    <Link key={d} href={`/notes?domain=${d}`} className="wp-term">
+                      {domainLabels[d]}
+                    </Link>
                   ))}
-                </p>
-              ) : null}
+                  {note.tags.map((t) => (
+                    <span key={t} className="wp-term">
+                      #{t}
+                    </span>
+                  ))}
+                </footer>
+              )}
 
+              {/* Post navigation */}
               {(prev || next) && (
-                <nav
-                  aria-label={`${note.series} series`}
-                  className="mt-12 grid gap-px border border-rule bg-rule sm:grid-cols-2"
-                >
+                <nav aria-label={`${note.series} series`} className="wp-post-nav mt-12">
                   {prev ? (
-                    <Link href={`/notes/${prev.slug}`} className="group bg-bg p-5">
-                      <span className="type-mono-label text-faint">
-                        ← Previous in series
-                      </span>
-                      <span className="mt-1 block font-serif text-lg group-hover:text-signal">
-                        {prev.title}
-                      </span>
+                    <Link href={`/notes/${prev.slug}`}>
+                      <span className="wp-nav-dir">← Previous</span>
+                      <span className="wp-nav-title">{prev.title}</span>
                     </Link>
                   ) : (
-                    <span className="bg-bg p-5" aria-hidden />
+                    <span aria-hidden className="bg-bg" />
                   )}
                   {next ? (
-                    <Link
-                      href={`/notes/${next.slug}`}
-                      className="group bg-bg p-5 text-right"
-                    >
-                      <span className="type-mono-label text-faint">Next in series →</span>
-                      <span className="mt-1 block font-serif text-lg group-hover:text-signal">
-                        {next.title}
-                      </span>
+                    <Link href={`/notes/${next.slug}`} className="text-right">
+                      <span className="wp-nav-dir">Next →</span>
+                      <span className="wp-nav-title">{next.title}</span>
                     </Link>
                   ) : (
-                    <span className="bg-bg p-5" aria-hidden />
+                    <span aria-hidden className="bg-bg" />
                   )}
                 </nav>
               )}
+
+              {/* Comments — the engagement panel is the site's comment thread */}
+              <section id="respond" className="mt-14 border-t border-rule pt-8">
+                <EngagementPanel contentKey={`notes/${note.slug}`} title={note.title} />
+              </section>
+            </main>
+
+            <div className="space-y-10">
+              {toc.length > 0 ? (
+                <div className="wp-widget sticky top-24 hidden lg:block">
+                  <TableOfContents entries={toc} />
+                </div>
+              ) : null}
+              <Sidebar />
             </div>
           </div>
-          <RelatedContent items={related} />
-        </Container>
+        </div>
       </article>
     </>
   );

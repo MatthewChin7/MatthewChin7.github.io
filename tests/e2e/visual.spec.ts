@@ -18,8 +18,15 @@ const shots: { name: string; path: string; theme?: "night" }[] = [
   { name: "project-case-study", path: "/work/btc-vol-surface" },
   { name: "notes-index", path: "/notes" },
   { name: "article-math", path: "/notes/martingales-and-stopping-times" },
+  { name: "problems-index", path: "/problems" },
+  { name: "problem-detail", path: "/problems/expected-maximum-two-dice" },
   { name: "atlas", path: "/atlas" },
   { name: "resume", path: "/resume" },
+  { name: "reading-index", path: "/reading" },
+  {
+    name: "book-review",
+    path: "/reading/elements-of-statistical-learning",
+  },
 ];
 
 for (const shot of shots) {

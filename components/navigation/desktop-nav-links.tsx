@@ -9,23 +9,15 @@ export function DesktopNavLinks() {
   const current = sectionForPath(pathname);
 
   return (
-    <nav aria-label="Primary" className="hidden flex-1 md:block">
-      <ul className="flex items-center gap-5">
+    <nav aria-label="Primary" className="hidden md:block">
+      <ul className="wp-menu-list flex flex-wrap items-center justify-center gap-x-7 gap-y-1">
         {sections
           .filter((s) => s.primary)
           .map((s) => {
             const active = current?.id === s.id;
             return (
               <li key={s.id}>
-                <Link
-                  href={s.href}
-                  aria-current={active ? "page" : undefined}
-                  className={`type-mono-label border-b py-1 transition-colors duration-[var(--t-micro)] ${
-                    active
-                      ? "border-signal text-fg"
-                      : "border-transparent text-muted hover:border-rule-strong hover:text-fg"
-                  }`}
-                >
+                <Link href={s.href} aria-current={active ? "page" : undefined}>
                   {s.label}
                 </Link>
               </li>

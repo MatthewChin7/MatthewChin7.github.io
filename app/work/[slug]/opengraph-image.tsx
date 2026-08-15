@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { OgCard, ogSize } from "@/lib/seo/og-template";
 import { getAllProjects, getProject } from "@/lib/content/load";
 
+export const dynamic = "force-static";
 export const size = ogSize;
 export const contentType = "image/png";
 

@@ -3,8 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container } from "@/components/layout/container";
 import { CoverVisual } from "@/components/content/cover-visual";
-import { DomainMark, StatusMark, DraftMark } from "@/components/content/marks";
+import { StatusMark, DraftMark } from "@/components/content/marks";
 import { RelatedContent } from "@/components/content/related-content";
+import { EngagementPanel } from "@/components/content/engagement-panel";
 import { getAllProjects, getProject } from "@/lib/content/load";
 import { relatedContent } from "@/lib/content/related";
 import { renderMdx } from "@/lib/content/mdx";
@@ -68,7 +69,6 @@ export default async function ProjectPage({
               href={`/work?domain=${d}`}
               className="inline-flex items-center gap-1.5 hover:text-fg"
             >
-              <DomainMark domain={d} />
               {domainLabels[d]}
             </Link>
           ))}
@@ -171,6 +171,9 @@ export default async function ProjectPage({
             </div>
           </div>
           <RelatedContent items={related} />
+          <div className="mx-auto max-w-3xl">
+            <EngagementPanel contentKey={`work/${project.slug}`} title={project.title} />
+          </div>
         </Container>
       </article>
     </>

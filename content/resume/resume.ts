@@ -34,7 +34,7 @@ export const resume: ResumeData = {
   name: "Matthew Chin",
   headline:
     "Harvard undergraduate — mathematics, statistics, and computer science. Quantitative research, machine learning, and ambitious systems.",
-  email: "Matthew.Chin@aurevia-md.com",
+  email: "matthewchin2005@hotmail.com",
   location: "Cambridge, MA ↔ Singapore",
   updated: "2026-07-19",
   sections: [

@@ -1,20 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
+import { IBM_Plex_Mono, Merriweather, Montserrat } from "next/font/google";
 import { SiteShell } from "@/components/layout/site-shell";
 import { site } from "@/lib/site/config";
 import "@/styles/globals.css";
 
-const serif = Instrument_Serif({
-  weight: "400",
+const literary = Merriweather({
+  weight: "variable",
   style: ["normal", "italic"],
   subsets: ["latin"],
-  variable: "--font-instrument-serif",
-  display: "swap",
-});
-
-const sans = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
+  variable: "--font-merriweather",
   display: "swap",
 });
 
@@ -22,6 +16,15 @@ const mono = IBM_Plex_Mono({
   weight: ["400", "500"],
   subsets: ["latin"],
   variable: "--font-plex-mono",
+  display: "swap",
+});
+
+// Montserrat — the WordPress default-theme UI/heading face (site title, menu,
+// entry meta). Merriweather stays the reading face, mirroring Twenty Sixteen.
+const ui = Montserrat({
+  weight: ["400", "500", "700"],
+  subsets: ["latin"],
+  variable: "--font-montserrat",
   display: "swap",
 });
 
@@ -60,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${serif.variable} ${sans.variable} ${mono.variable}`}
+      className={`${literary.variable} ${mono.variable} ${ui.variable}`}
       suppressHydrationWarning
     >
       <body>

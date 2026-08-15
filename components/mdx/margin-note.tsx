@@ -3,16 +3,17 @@
 import { useId, useState } from "react";
 
 /**
- * On wide (xl+) screens the note floats into the true right margin beside
- * its anchor (Tufte-style sidenote: float-right + negative right margin).
- * Below xl it collapses to an inline numbered disclosure — no hover-only
- * or hidden content anywhere.
+ * Inline numbered footnote disclosure. A superscript-style numbered button
+ * toggles the note open beneath its anchor. (The former Tufte margin-float
+ * variant was retired in the WordPress reskin, where the right margin is the
+ * widget sidebar.) No hover-only or hidden-from-AT content.
  */
 export function MarginNote({
   index,
   children,
 }: {
-  index?: number;
+  /** String because MDX attribute expressions do not survive this pipeline. */
+  index?: number | string;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -21,33 +22,19 @@ export function MarginNote({
 
   return (
     <>
-      {/* wide: hanging note in the margin column */}
-      <span
-        className="hidden font-mono text-[0.7rem] text-annotation xl:inline"
-        aria-hidden
-      >
-        {mark}
-      </span>
-      <span className="clear-right float-right my-1 -mr-52 hidden w-44 border-l border-rule pl-4 font-mono text-[0.72rem] leading-relaxed text-muted [text-wrap:pretty] xl:block">
-        <span className="text-annotation" aria-hidden>
-          {mark}{" "}
-        </span>
-        {children}
-      </span>
-      {/* narrow: inline toggle */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={id}
-        className="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center border border-rule-strong px-1 font-mono text-[0.65rem] text-annotation transition-colors duration-[var(--t-micro)] hover:border-annotation xl:hidden"
+        className="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center border border-rule-strong px-1 font-mono text-[0.65rem] text-annotation transition-colors duration-[var(--t-micro)] hover:border-annotation"
       >
         {mark}
       </button>
       <span
         id={id}
         hidden={!open}
-        className="my-2 block border-l border-annotation pl-4 font-mono text-[0.78rem] leading-relaxed text-muted xl:hidden"
+        className="my-2 block border-l border-annotation pl-4 font-mono text-[0.78rem] leading-relaxed text-muted"
       >
         {children}
       </span>

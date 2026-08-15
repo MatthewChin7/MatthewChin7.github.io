@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { site, sections } from "@/lib/site/config";
-import { getAllContent, contentUrl } from "@/lib/content/load";
+import { getAllContent, getAllReading, contentUrl } from "@/lib/content/load";
+
+export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [...sections.map((s) => s.href), "/search"].map((href) => ({
@@ -16,5 +18,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
     }));
 
-  return [...staticRoutes, ...contentRoutes];
+  const readingRoutes = getAllReading().map((book) => ({
+    url: `${site.url}/reading/${book.slug}`,
+    changeFrequency: "monthly" as const,
+  }));
+
+  return [...staticRoutes, ...contentRoutes, ...readingRoutes];
 }

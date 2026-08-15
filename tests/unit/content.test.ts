@@ -3,6 +3,7 @@ import {
   getAllContent,
   getAllNotes,
   getAllProjects,
+  getReading,
   contentId,
   findById,
 } from "@/lib/content/load";
@@ -35,6 +36,11 @@ describe("content loading", () => {
   it("resolves ids back to items", () => {
     expect(findById("work/btc-vol-surface")?.kind).toBe("project");
     expect(findById("nowhere/nothing")).toBeUndefined();
+  });
+
+  it("resolves reading entries for review pages", () => {
+    expect(getReading("hull-options-futures-derivatives")?.author).toBe("John C. Hull");
+    expect(getReading("not-a-book")).toBeUndefined();
   });
 });
 

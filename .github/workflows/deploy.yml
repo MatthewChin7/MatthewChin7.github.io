@@ -1,0 +1,79 @@
+name: Deploy to GitHub Pages
+
+# Builds the site as a static export and publishes it to GitHub Pages on every
+# push to main.
+#
+# The /admin studio ships with the site. On a static host it has no server to
+# write files, so its backend becomes the GitHub API: it commits to this
+# repository, and that commit triggers this workflow again. It is inert until
+# it is given a fine-grained token with Contents: Read and write, which only
+# the author has — see docs/DEPLOYMENT.md.
+#
+# One-time setup: Repository → Settings → Pages → Build and deployment →
+# Source: "GitHub Actions".
+#
+# This is configured for a USER site (https://matthewchin7.github.io), so
+# PAGES_BASE_PATH is empty. For a PROJECT site (https://<user>.github.io/<repo>)
+# set it to "/<repo>".
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  PAGES_BASE_PATH: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Routes that cannot be static are excluded by next.config.ts rather than
+      # deleted here, so a local `STATIC_EXPORT=1 pnpm build` produces exactly
+      # what this job produces.
+      - name: Build static export
+        env:
+          STATIC_EXPORT: "1"
+          PAGES_BASE_PATH: ${{ env.PAGES_BASE_PATH }}
+          # Tells the hosted studio which repository to commit to. Public
+          # information — it is the repo this site is built from.
+          NEXT_PUBLIC_GITHUB_REPO: ${{ github.repository }}
+          NEXT_PUBLIC_GITHUB_BRANCH: ${{ github.ref_name }}
+        run: pnpm build
+
+      # Stop GitHub Pages from running Jekyll over the output.
+      - run: touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

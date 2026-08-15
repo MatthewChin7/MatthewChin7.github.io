@@ -1,4 +1,4 @@
-import { sections } from "@/lib/site/config";
+import { navSections } from "@/lib/site/config";
 import { getAllContent, contentId, contentTitle, contentUrl } from "@/lib/content/load";
 import { stripMarkdown } from "@/lib/content/derive";
 import type { SearchDoc } from "@/lib/search/query";
@@ -48,8 +48,8 @@ export function buildSearchIndex(): SearchDoc[] {
         text: tag.toLowerCase(),
       });
 
-  // navigation destinations
-  for (const s of sections)
+  // navigation destinations (hidden sections like atlas/videos are excluded)
+  for (const s of navSections)
     docs.push({
       id: `page/${s.id}`,
       url: s.href,

@@ -356,15 +356,6 @@ export function SignalAtlas({
             </div>
           ) : null}
         </div>
-
-        <p className="type-mono-meta mt-3 hidden text-faint md:block">
-          Arrow keys walk the graph · Enter opens · Esc clears the selection · every node
-          is also listed in the index below.
-        </p>
-        <p className="type-mono-meta mt-3 text-muted md:hidden">
-          On smaller screens the atlas reads as the index below — the same graph, one node
-          per line.
-        </p>
       </div>
     </MotionConfig>
   );

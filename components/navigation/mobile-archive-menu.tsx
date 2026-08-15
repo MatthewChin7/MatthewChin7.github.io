@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { MCMonogram } from "@/components/ui/mc-monogram";
-import { site, sections, sectionForPath } from "@/lib/site/config";
+import { site, navSections, sectionForPath } from "@/lib/site/config";
 
 /**
  * Full-screen archive index for narrow viewports. Radix Dialog supplies
@@ -53,7 +53,7 @@ export function MobileArchiveMenu({
 
           <nav aria-label="Archive index" className="flex-1 px-4 py-6">
             <ul>
-              {sections.map((s) => {
+              {navSections.map((s) => {
                 const active = current?.id === s.id;
                 return (
                   <li key={s.id} className="border-b border-rule">
@@ -63,7 +63,9 @@ export function MobileArchiveMenu({
                       aria-current={active ? "page" : undefined}
                       className="group flex items-baseline gap-4 py-3.5"
                     >
-                      <span className="type-mono-meta text-faint">[{s.coordinate}]</span>
+                      <span aria-hidden className="text-xl leading-none">
+                        {s.emoji}
+                      </span>
                       <span
                         className={`font-serif text-2xl leading-none ${
                           active ? "text-signal" : "text-fg"

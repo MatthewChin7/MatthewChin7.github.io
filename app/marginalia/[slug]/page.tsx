@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container } from "@/components/layout/container";
 import { RelatedContent } from "@/components/content/related-content";
+import { EngagementPanel } from "@/components/content/engagement-panel";
 import { DraftMark } from "@/components/content/marks";
 import { getAllMusings, getMusing } from "@/lib/content/load";
 import { relatedContent } from "@/lib/content/related";
@@ -86,6 +87,10 @@ export default async function MusingPage({
           </p>
         ) : null}
         <RelatedContent items={related} />
+        <EngagementPanel
+          contentKey={`marginalia/${musing.slug}`}
+          title={musing.title ?? `Marginalia — ${formatDate(musing.date)}`}
+        />
       </article>
     </Container>
   );

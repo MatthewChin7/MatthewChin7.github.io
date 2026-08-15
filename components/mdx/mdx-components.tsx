@@ -79,41 +79,85 @@ function Callout({
 
 /* ————— mathematical writing ————— */
 
+type MathBlockVariant =
+  | "definition"
+  | "theorem"
+  | "lemma"
+  | "corollary"
+  | "proposition"
+  | "remark"
+  | "example"
+  | "question"
+  | "keyidea";
+
+/** Display name and optional glyph per statement kind. */
+const CALLOUT_META: Record<MathBlockVariant, { label: string; glyph?: string }> = {
+  definition: { label: "Definition" },
+  theorem: { label: "Theorem" },
+  lemma: { label: "Lemma" },
+  corollary: { label: "Corollary" },
+  proposition: { label: "Proposition" },
+  remark: { label: "Remark" },
+  example: { label: "Example" },
+  question: { label: "Question" },
+  keyidea: { label: "Key idea", glyph: "💡" },
+};
+
+interface MathBlockProps {
+  title?: string;
+  /**
+   * Statement number, so \ref cross-references resolve on the page. A string
+   * because MDX attribute expressions do not survive this pipeline.
+   */
+  n?: number | string;
+  children: React.ReactNode;
+}
+
 function MathBlock({
   variant,
   title,
+  n,
   children,
-}: {
-  variant: "definition" | "theorem" | "proposition" | "question";
-  title?: string;
-  children: React.ReactNode;
-}) {
-  const label = variant.charAt(0).toUpperCase() + variant.slice(1);
+}: MathBlockProps & { variant: MathBlockVariant }) {
+  const { label, glyph } = CALLOUT_META[variant];
+  // Key ideas read as prose; the mathematical statements stay italic.
+  const italic = variant !== "keyidea";
   return (
-    <div className="my-8 border-y border-rule py-5">
+    <div className={`callout callout-${variant}`}>
       <p className="mb-2">
-        <span className="type-mono-label text-signal">{label}</span>
+        <span className="type-mono-label callout-label">
+          {glyph ? (
+            <span className="callout-glyph" aria-hidden>
+              {glyph}
+            </span>
+          ) : null}
+          {label}
+          {n ? ` ${n}` : ""}
+        </span>
         {title ? <span className="ml-3 font-serif italic">({title})</span> : null}
       </p>
-      <div className="font-serif text-[1.05em] leading-relaxed [font-style:italic] [&_.katex]:not-italic">
+      <div
+        className={
+          italic
+            ? "font-serif text-[1.05em] leading-relaxed [font-style:italic] [&_.katex]:not-italic"
+            : "text-[0.9375rem] leading-relaxed"
+        }
+      >
         {children}
       </div>
     </div>
   );
 }
 
-const Definition = (p: { title?: string; children: React.ReactNode }) => (
-  <MathBlock variant="definition" {...p} />
-);
-const Theorem = (p: { title?: string; children: React.ReactNode }) => (
-  <MathBlock variant="theorem" {...p} />
-);
-const Proposition = (p: { title?: string; children: React.ReactNode }) => (
-  <MathBlock variant="proposition" {...p} />
-);
-const Question = (p: { title?: string; children: React.ReactNode }) => (
-  <MathBlock variant="question" {...p} />
-);
+const Definition = (p: MathBlockProps) => <MathBlock variant="definition" {...p} />;
+const Theorem = (p: MathBlockProps) => <MathBlock variant="theorem" {...p} />;
+const Lemma = (p: MathBlockProps) => <MathBlock variant="lemma" {...p} />;
+const Corollary = (p: MathBlockProps) => <MathBlock variant="corollary" {...p} />;
+const Proposition = (p: MathBlockProps) => <MathBlock variant="proposition" {...p} />;
+const Remark = (p: MathBlockProps) => <MathBlock variant="remark" {...p} />;
+const Example = (p: MathBlockProps) => <MathBlock variant="example" {...p} />;
+const Question = (p: MathBlockProps) => <MathBlock variant="question" {...p} />;
+const KeyIdea = (p: MathBlockProps) => <MathBlock variant="keyidea" {...p} />;
 
 function Proof({ children }: { children: React.ReactNode }) {
   return (
@@ -346,9 +390,14 @@ export const mdxComponents: MDXComponents = {
   MarginNote,
   Definition,
   Theorem,
+  Lemma,
+  Corollary,
   Proof,
   Proposition,
+  Remark,
+  Example,
   Question,
+  KeyIdea,
   Equation,
   Quote,
   DataTable,

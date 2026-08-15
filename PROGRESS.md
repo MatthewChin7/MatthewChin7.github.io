@@ -41,10 +41,9 @@ data files for marginalia/videos so /admin can append; dev-only /admin
 
 ## Assumptions
 
-- Email Matthew.Chin@aurevia-md.com (from environment) used for contact.
+- Email matthewchin2005@hotmail.com (from environment) used for contact.
 - `site.url` is `https://example.com` until the real domain is chosen.
 - Social URLs empty (hidden in UI) until supplied.
-- "Cambridge ↔ Singapore" used as biographical context per the brief.
 - Résumé dates/employers beyond the brief are `TODO(matthew)` placeholders.
 - Seed marginalia are marked "Sample entry."; seed videos are drafts with
   TODO embed ids (excluded from production by tests).

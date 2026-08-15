@@ -8,12 +8,15 @@ const pages = [
   "/notes",
   "/notes/realized-vs-implied-volatility",
   "/marginalia",
+  "/problems",
+  "/problems/expected-maximum-two-dice",
   "/videos",
   "/atlas",
   "/resume",
-  "/about",
   "/now",
   "/contact",
+  "/reading",
+  "/reading/elements-of-statistical-learning",
   "/search",
 ];
 
@@ -42,15 +45,12 @@ test("skip link jumps to main content", async ({ page }, testInfo) => {
   await expect(page).toHaveURL(/#main/);
 });
 
-test("reduced motion serves a static ambient atlas", async ({ browser }) => {
+test("reduced motion keeps book covers static", async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
-  await page.goto("/");
-  // drift groups exist but no animation transform is applied under reduced motion
-  await page.waitForTimeout(600);
-  const transforms = await page.$$eval("[data-drift]", (els) =>
-    els.map((el) => (el as SVGGElement).style.transform),
-  );
-  for (const t of transforms) expect(t).toBe("");
+  await page.goto("/reading");
+  const cover = page.locator("[data-book-cover]").first();
+  await cover.hover();
+  await expect(cover).toHaveCSS("transform", "none");
   await context.close();
 });

@@ -10,10 +10,13 @@ import {
   noteFrontmatterSchema,
   marginaliaSchema,
   videoSchema,
+  readingSchema,
+  problemFrontmatterSchema,
 } from "../lib/content/schemas";
 
 const ROOT = path.join(__dirname, "..");
 const CONTENT = path.join(ROOT, "content");
+const TODAY = new Date().toISOString().slice(0, 10);
 const errors: string[] = [];
 
 function fail(msg: string) {
@@ -95,6 +98,29 @@ for (const { file, data, body } of readMdx("notes")) {
   });
 }
 
+// ---- problems (math questions + solutions)
+for (const { file, data, body } of readMdx("problems")) {
+  const parsed = problemFrontmatterSchema.safeParse(data);
+  if (!parsed.success) {
+    fail(
+      `${file}: invalid frontmatter — ${parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`,
+    );
+    continue;
+  }
+  const p = parsed.data;
+  if (body.trim().length === 0) fail(`${file}: problem has an empty solution body`);
+  docs.push({
+    id: `problems/${p.slug}`,
+    slug: p.slug,
+    file,
+    draft: p.draft,
+    related: [],
+    date: p.date,
+    updated: p.updated,
+    body,
+  });
+}
+
 // ---- marginalia
 const marginaliaFile = path.join(CONTENT, "marginalia", "marginalia.json");
 if (fs.existsSync(marginaliaFile)) {
@@ -145,6 +171,30 @@ if (fs.existsSync(videosFile)) {
       date: v.date,
       poster: v.poster,
     });
+  });
+}
+
+// ---- reading (standalone list — not part of the content graph)
+const readingFile = path.join(CONTENT, "reading", "reading.json");
+if (fs.existsSync(readingFile)) {
+  const raw: unknown[] = JSON.parse(fs.readFileSync(readingFile, "utf8"));
+  const readingSlugs = new Map<string, number>();
+  raw.forEach((entry, i) => {
+    const parsed = readingSchema.safeParse(entry);
+    if (!parsed.success) {
+      fail(
+        `reading[${i}]: ${parsed.error.issues.map((iss) => `${iss.path.join(".")}: ${iss.message}`).join("; ")}`,
+      );
+      return;
+    }
+    const r = parsed.data;
+    const prior = readingSlugs.get(r.slug);
+    if (prior != null) fail(`reading/${r.slug}: duplicate slug (also reading[${prior}])`);
+    readingSlugs.set(r.slug, i);
+    if (!r.draft && r.note?.startsWith("Sample entry"))
+      fail(`reading/${r.slug}: published book still has placeholder "Sample entry" note`);
+    if (r.status === "read" && r.finished && r.finished > TODAY)
+      fail(`reading/${r.slug}: finished date ${r.finished} is in the future`);
   });
 }
 

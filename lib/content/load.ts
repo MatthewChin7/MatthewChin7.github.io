@@ -6,10 +6,14 @@ import {
   noteFrontmatterSchema,
   marginaliaSchema,
   videoSchema,
+  readingSchema,
+  problemFrontmatterSchema,
   type ProjectFrontmatter,
   type NoteFrontmatter,
   type MarginaliaEntry,
   type VideoEntry,
+  type ReadingEntry,
+  type ProblemFrontmatter,
 } from "@/lib/content/schemas";
 import { readingTimeMinutes, excerpt, wordCount } from "@/lib/content/derive";
 
@@ -52,6 +56,25 @@ export interface Video extends VideoEntry {
   kind: "video";
 }
 
+/**
+ * A book on the shelf. Reading entries are a standalone list, not nodes in
+ * the content graph — they have no body, relations, or detail page, so they
+ * stay out of `getAllContent`, the atlas, and search.
+ */
+export interface Reading extends ReadingEntry {
+  kind: "reading";
+}
+
+/**
+ * A math problem. Like reading, problems are a standalone list with their own
+ * detail pages — they are not nodes in the content graph (atlas/search).
+ */
+export interface Problem extends ProblemFrontmatter {
+  body: string;
+  readingTime: number;
+  kind: "problem";
+}
+
 export type ContentItem = Project | Note | Musing | Video;
 
 function readMdxDir(dir: string): { file: string; data: unknown; body: string }[] {
@@ -69,8 +92,10 @@ function readMdxDir(dir: string): { file: string; data: unknown; body: string }[
 
 let projectCache: Project[] | null = null;
 let noteCache: Note[] | null = null;
+let problemCache: Problem[] | null = null;
 let musingCache: Musing[] | null = null;
 let videoCache: Video[] | null = null;
+let readingCache: Reading[] | null = null;
 
 export function getAllProjects(): Project[] {
   projectCache ??= readMdxDir("projects")
@@ -107,6 +132,25 @@ export function getAllNotes(): Note[] {
   return includeDrafts ? noteCache : noteCache.filter((n) => !n.draft);
 }
 
+export function getAllProblems(): Problem[] {
+  problemCache ??= readMdxDir("problems")
+    .map(({ file, data, body }) => {
+      const fm = parseOrThrow(problemFrontmatterSchema, data, file);
+      return {
+        ...fm,
+        body,
+        readingTime: readingTimeMinutes(body),
+        kind: "problem" as const,
+      };
+    })
+    .sort((a, b) => b.date.localeCompare(a.date));
+  return includeDrafts ? problemCache : problemCache.filter((p) => !p.draft);
+}
+
+export function getProblem(slug: string): Problem | undefined {
+  return getAllProblems().find((p) => p.slug === slug);
+}
+
 export function getAllMusings(): Musing[] {
   if (!musingCache) {
     const file = path.join(CONTENT_DIR, "marginalia", "marginalia.json");
@@ -131,6 +175,24 @@ export function getAllVideos(): Video[] {
       .sort((a, b) => b.date.localeCompare(a.date));
   }
   return includeDrafts ? videoCache : videoCache.filter((v) => !v.draft);
+}
+
+export function getAllReading(): Reading[] {
+  if (!readingCache) {
+    const file = path.join(CONTENT_DIR, "reading", "reading.json");
+    const raw: unknown[] = fs.existsSync(file)
+      ? JSON.parse(fs.readFileSync(file, "utf8"))
+      : [];
+    readingCache = raw.map((entry) => ({
+      ...readingSchema.parse(entry),
+      kind: "reading" as const,
+    }));
+  }
+  return includeDrafts ? readingCache : readingCache.filter((r) => !r.draft);
+}
+
+export function getReading(slug: string): Reading | undefined {
+  return getAllReading().find((book) => book.slug === slug);
 }
 
 export function getProject(slug: string): Project | undefined {

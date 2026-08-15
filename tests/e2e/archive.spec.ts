@@ -23,22 +23,21 @@ test.describe("archive interactions", () => {
     await expect(page.getByRole("combobox")).toHaveCount(0);
   });
 
-  test("work index filters via URL state", async ({ page }) => {
+  test("portfolio shows projects grouped by year, cards link through", async ({
+    page,
+  }) => {
     await page.goto("/work");
-    await page
-      .getByRole("navigation", { name: "Filters" })
-      .getByRole("link", { name: "Markets" })
-      .click();
-    await expect(page).toHaveURL(/domain=markets/);
-    await expect(page.getByRole("heading", { name: /Market-Making/ })).toBeVisible();
-    await expect(page.getByRole("heading", { name: /Pollution Dispersion/ })).toHaveCount(
-      0,
-    );
-    // deep link works cold
-    await page.goto("/work?domain=physical-systems");
     await expect(
-      page.getByRole("heading", { name: /Pollution Dispersion/ }),
+      page.getByRole("heading", { name: "Portfolio", level: 1 }),
     ).toBeVisible();
+    // year subheaders present
+    await expect(page.getByRole("heading", { name: /^20\d\d$/ }).first()).toBeVisible();
+    // a project card is a link to its detail page
+    const card = page
+      .getByRole("link", { name: /Market-Making|Volatility|Dispersion/ })
+      .first();
+    await card.click();
+    await expect(page).toHaveURL(/\/work\//);
   });
 
   test("article renders math, TOC navigates, progress bar present", async ({ page }) => {
@@ -58,6 +57,50 @@ test.describe("archive interactions", () => {
     ).toBeInViewport();
   });
 
+  test("book cards open review pages with engagement controls", async ({ page }) => {
+    await page.goto("/reading");
+    await page
+      .getByRole("link", {
+        name: "Read the review of Options, Futures, and Other Derivatives",
+      })
+      .click();
+    await expect(page).toHaveURL(/\/reading\/hull-options-futures-derivatives/);
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: "Options, Futures, and Other Derivatives",
+      }),
+    ).toBeVisible();
+    await expect(page.locator("[data-engagement]")).toBeVisible();
+  });
+
+  test("likes and comments persist in the browser", async ({ page }) => {
+    await page.goto("/reading/elements-of-statistical-learning");
+    const engagement = page.locator("[data-engagement]");
+    const like = engagement.getByRole("button", { name: "Like", exact: true });
+    await like.click();
+    await expect(engagement.getByText("1 like", { exact: true })).toBeVisible();
+
+    await engagement.getByLabel("Name (optional)").fill("Test Reader");
+    await engagement.getByLabel("Comment").fill("A useful review.");
+    await engagement.getByRole("button", { name: "Post comment" }).click();
+    await expect(engagement.getByText("A useful review.", { exact: true })).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByText("A useful review.", { exact: true })).toBeVisible();
+    await expect(page.getByText("1 like", { exact: true })).toBeVisible();
+  });
+
+  test("notes and work pages include the engagement panel", async ({ page }) => {
+    for (const path of [
+      "/notes/realized-vs-implied-volatility",
+      "/work/btc-vol-surface",
+    ]) {
+      await page.goto(path);
+      await expect(page.locator("[data-engagement]")).toBeVisible();
+    }
+  });
+
   test("series navigation is hidden for drafts in production", async ({ page }) => {
     await page.goto("/notes/realized-vs-implied-volatility");
     // part 2 of the series is a draft — must not be linked in prod
@@ -66,14 +109,31 @@ test.describe("archive interactions", () => {
     ).toHaveCount(0);
   });
 
-  test("marginalia stream renders and filters", async ({ page }) => {
+  test("musings stream renders and each block links to its permalink", async ({
+    page,
+  }) => {
     await page.goto("/marginalia");
-    await expect(page.getByRole("heading", { name: /Marginalia/ })).toBeVisible();
-    await page
-      .getByRole("navigation", { name: "Filter by kind" })
-      .getByRole("link", { name: "question", exact: true })
-      .click();
-    await expect(page).toHaveURL(/type=question/);
+    await expect(page.getByRole("heading", { name: /Musings/ })).toBeVisible();
+    // year subheader present
+    await expect(page.getByRole("heading", { name: /^20\d\d$/ }).first()).toBeVisible();
+    // clicking an entry block navigates to its permalink
+    await page.locator("ol li a").first().click();
+    await expect(page).toHaveURL(/\/marginalia\//);
+  });
+
+  test("problems page renders math and reveals a solution", async ({ page }) => {
+    await page.goto("/problems");
+    await expect(page.getByRole("heading", { name: "Problems", level: 1 })).toBeVisible();
+    // this problem's question itself contains math
+    await page.getByRole("link", { name: /Sum of Cubes is a Square/ }).click();
+    await expect(page).toHaveURL(/\/problems\/sum-of-cubes-is-a-square/);
+    // KaTeX rendered the question
+    await expect(page.locator(".katex").first()).toBeVisible();
+    // solution is behind a disclosure — hidden until opened
+    const details = page.locator("details");
+    await expect(details.locator(".katex").first()).toBeHidden();
+    await details.locator("summary").click();
+    await expect(details.locator(".katex").first()).toBeVisible();
   });
 
   test("videos index shows honest empty state (drafts excluded)", async ({ page }) => {
@@ -81,12 +141,13 @@ test.describe("archive interactions", () => {
     await expect(page.getByText("The projector is warming up.")).toBeVisible();
   });
 
-  test("resume has concise/detailed views and print styles", async ({ page }) => {
+  test("cv renders the uploaded PDF in a scrollable viewer", async ({ page }) => {
     await page.goto("/resume");
-    await expect(page.getByRole("heading", { name: "Matthew Chin" })).toBeVisible();
-    await page.getByRole("link", { name: "detailed" }).click();
-    await expect(page).toHaveURL(/view=detailed/);
-    // print emulation hides chrome
+    await expect(page.getByRole("heading", { name: "CV", level: 1 })).toBeVisible();
+    // embedded PDF viewer present, with a download affordance
+    await expect(page.locator('object[type="application/pdf"]')).toBeVisible();
+    await expect(page.getByRole("link", { name: /Download PDF/ })).toBeVisible();
+    // print emulation hides site chrome
     await page.emulateMedia({ media: "print" });
     await expect(page.locator("header[data-site-header]")).toBeHidden();
     await expect(page.locator("footer[data-site-footer]")).toBeHidden();
@@ -116,11 +177,16 @@ test.describe("archive interactions", () => {
 
   test("admin studio is absent from production", async ({ request }) => {
     expect((await request.get("/admin")).status()).toBe(404);
+    // Every method on the authoring API, not just the one the UI happens to use.
+    expect((await request.get("/admin/api?action=list")).status()).toBe(404);
     expect(
       (
-        await request.post("/admin/api", { data: { action: "note", title: "x" } })
+        await request.post("/admin/api", { data: { action: "save", kind: "note" } })
       ).status(),
     ).toBe(404);
+    expect((await request.delete("/admin/api?kind=note&slug=anything")).status()).toBe(
+      404,
+    );
   });
 
   test("draft content is excluded from production", async ({ request }) => {

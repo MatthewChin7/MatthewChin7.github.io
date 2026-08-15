@@ -1,29 +1,39 @@
 import Link from "next/link";
-import { MCMonogram } from "@/components/ui/mc-monogram";
 import { NavActions } from "@/components/navigation/nav-actions";
 import { DesktopNavLinks } from "@/components/navigation/desktop-nav-links";
 import { site } from "@/lib/site/config";
 
+/**
+ * WordPress default-theme masthead: centered site title + tagline over a
+ * primary menu bar. The search / theme / mobile-menu controls (NavActions)
+ * ride at the right of the menu row so keyboard and mobile nav still work.
+ */
 export function Header() {
   return (
-    <header
-      data-site-header
-      className="sticky top-0 z-50 border-b border-rule bg-bg/92 backdrop-blur-sm"
-    >
-      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-6 px-4 sm:px-6 lg:px-[6vw]">
-        <Link
-          href="/"
-          className="flex shrink-0 items-center gap-2.5 text-fg"
-          aria-label={`${site.name} — home`}
-        >
-          <MCMonogram size={22} />
-          <span className="type-mono-label hidden text-fg xs:inline">
-            Matthew&nbsp;Chin
-          </span>
-        </Link>
-        <DesktopNavLinks />
-        <NavActions />
+    <>
+      <header data-site-header className="wp-masthead">
+        <div className="wp-inner py-8 sm:py-10">
+          <p className="wp-site-title">
+            <Link href="/" aria-label={`${site.name} — home`} className="wp-logo-link">
+              {/* Signature logo. Replace public/logo.svg with your own
+                  signature (SVG, or swap the src to /logo.png). Inverts for
+                  dark mode via CSS (black in light, white in dark). */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.svg" alt={site.name} className="wp-logo" />
+            </Link>
+          </p>
+          <p className="wp-site-description">{site.description}</p>
+        </div>
+      </header>
+
+      <div data-site-header className="wp-menu sticky top-0 z-50">
+        <div className="wp-inner relative flex min-h-[3.25rem] items-center justify-center">
+          <DesktopNavLinks />
+          <div className="md:absolute md:right-5">
+            <NavActions />
+          </div>
+        </div>
       </div>
-    </header>
+    </>
   );
 }

@@ -81,7 +81,7 @@ export function OgCard({
         }}
       >
         <div style={{ display: "flex", fontSize: 26, color: "#6b6c78" }}>
-          Matthew Chin — The Signal Archive
+          Matthew Chin
         </div>
         {meta ? (
           <div style={{ display: "flex", fontSize: 24, color: "#2f4bc7" }}>{meta}</div>

@@ -101,6 +101,58 @@ export const marginaliaSchema = z.object({
   draft: z.boolean().default(false),
 });
 
+export const PROBLEM_DIFFICULTIES = ["warmup", "medium", "hard", "olympiad"] as const;
+
+/**
+ * A math problem: a question (`prompt`, math-enabled) in frontmatter and the
+ * worked solution in the MDX body. Both render through the KaTeX pipeline.
+ */
+export const problemFrontmatterSchema = z.object({
+  title: z.string().min(1),
+  slug,
+  prompt: z.string().min(1),
+  date: isoDate,
+  updated: isoDate.optional(),
+  topic: z.string().min(1),
+  difficulty: z.enum(PROBLEM_DIFFICULTIES).default("medium"),
+  source: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+  /** Formatted references, in citation order. Rendered under the solution. */
+  bibliography: z.array(z.string()).default([]),
+  draft: z.boolean().default(false),
+});
+
+/**
+ * A standalone MDX page (content/pages/*.mdx) such as /now. Pages carry no
+ * taxonomy — they are edited in place rather than listed anywhere.
+ */
+export const pageFrontmatterSchema = z.object({
+  title: z.string().min(1),
+  slug: slug.optional(),
+  updated: isoDate.optional(),
+  description: z.string().optional(),
+});
+
+export const READING_STATUSES = ["reading", "read", "to-read"] as const;
+
+export const readingSchema = z.object({
+  title: z.string().min(1),
+  author: z.string().min(1),
+  slug,
+  status: z.enum(READING_STATUSES),
+  /** Local cover image path, rooted in /public. */
+  cover: z.string().startsWith("/").optional(),
+  /** When a "read" book was finished. */
+  finished: isoDate.optional(),
+  /** When a "reading" book was started. */
+  started: isoDate.optional(),
+  /** A short, first-person note — conservative language, no invented claims. */
+  note: z.string().optional(),
+  link: z.url().optional(),
+  tags: z.array(z.string()).default([]),
+  draft: z.boolean().default(false),
+});
+
 export const videoChapterSchema = z.object({
   /** Seconds from start. */
   t: z.number().min(0),
@@ -124,8 +176,11 @@ export const videoSchema = z.object({
   draft: z.boolean().default(false),
 });
 
+export type ProblemFrontmatter = z.infer<typeof problemFrontmatterSchema>;
+export type PageFrontmatter = z.infer<typeof pageFrontmatterSchema>;
 export type ProjectFrontmatter = z.infer<typeof projectFrontmatterSchema>;
 export type NoteFrontmatter = z.infer<typeof noteFrontmatterSchema>;
 export type MarginaliaEntry = z.infer<typeof marginaliaSchema>;
 export type VideoEntry = z.infer<typeof videoSchema>;
 export type VideoChapter = z.infer<typeof videoChapterSchema>;
+export type ReadingEntry = z.infer<typeof readingSchema>;

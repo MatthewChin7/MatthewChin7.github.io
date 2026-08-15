@@ -1,23 +1,24 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("primary navigation", () => {
-  test("homepage renders identity and hero copy", async ({ page }) => {
+  test("homepage renders the editable about layout", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/Matthew Chin/);
-    await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      "I study systems that move",
-    );
-    await expect(page.getByText("CAMBRIDGE ↔ SINGAPORE", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Matthew Chin");
+    await expect(page.getByRole("heading", { name: "Currently" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Background" })).toBeVisible();
   });
 
   test("primary destinations are reachable", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === "mobile", "desktop nav only");
     await page.goto("/");
     for (const [label, heading] of [
-      ["Work", "Work — the investigations"],
-      ["Notes", "Notes — the journal"],
-      ["Atlas", "The Signal Atlas"],
-      ["About", "About"],
+      ["Blog", "Blog"],
+      ["Musings", "Musings"],
+      ["Portfolio", "Portfolio"],
+      ["Problems", "Problems"],
+      ["Reading", "Reading"],
+      ["CV", "CV"],
     ] as const) {
       await page
         .getByRole("navigation", { name: "Primary" })
@@ -39,7 +40,7 @@ test.describe("primary navigation", () => {
     await page.keyboard.press("Enter");
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("link", { name: /Marginalia/ })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: /Musings/ })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     // focus returns to the trigger

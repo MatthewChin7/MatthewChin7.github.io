@@ -2,9 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { sectionForPath } from "@/lib/site/config";
 
 const CommandPalette = dynamic(
   () => import("@/components/search/command-palette").then((m) => m.CommandPalette),
@@ -24,8 +22,6 @@ export function NavActions() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [paletteReady, setPaletteReady] = useState(false);
   const [menuReady, setMenuReady] = useState(false);
-  const pathname = usePathname();
-  const current = sectionForPath(pathname);
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -52,11 +48,6 @@ export function NavActions() {
 
   return (
     <div className="ml-auto flex items-center gap-2 sm:gap-3">
-      {current ? (
-        <span className="type-mono-meta hidden text-faint lg:inline" aria-hidden>
-          [{current.coordinate} / {current.label.toUpperCase()}]
-        </span>
-      ) : null}
       <button
         type="button"
         onClick={() => {

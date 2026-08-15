@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Container } from "@/components/layout/container";
-import { PlateHeader } from "@/components/layout/plate-header";
-import { AdminStudio } from "@/components/admin/admin-studio";
+import { StudioGate } from "@/components/admin/studio-gate";
+import { studioMode } from "@/lib/admin/transport";
+import { site } from "@/lib/site/config";
+import "katex/dist/katex.min.css";
 
 export const metadata: Metadata = {
   title: "Studio",
@@ -10,23 +11,30 @@ export const metadata: Metadata = {
 };
 
 /**
- * Local authoring studio. Development only — production builds 404 here,
- * so the deployed site carries no writable surface and no auth risk.
- * Everything it writes lands in the repo working tree as a draft.
+ * The authoring studio.
+ *
+ * The page itself carries no content — it is a shell that asks its backend for
+ * the archive once it is open. Which backend that is depends on the build:
+ *
+ *   `pnpm dev`            → /admin/api, writing into the working tree.
+ *   static export (Pages) → the GitHub API, committing to the repository.
+ *
+ * A *server* production build (`next start`, and the e2e suite) has neither:
+ * it 404s here, so a deployed Node server can never carry a writable surface.
+ * The static export has no server to attack, and the hosted studio is inert
+ * until it is given a token that only the author holds.
  */
 export default function AdminPage() {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (studioMode === "local" && process.env.NODE_ENV === "production") notFound();
 
   return (
-    <Container className="py-14">
-      <PlateHeader coordinate="≡" label="Studio — local authoring" as="h1" />
-      <p className="mb-10 max-w-[60ch] text-muted">
-        This studio only exists while the site runs locally (
-        <code className="font-mono text-sm">pnpm dev</code>). It writes drafts and uploads
-        directly into the repository — review, commit, and deploy to publish. On the
-        deployed site this page is a 404.
-      </p>
-      <AdminStudio />
-    </Container>
+    <StudioGate
+      site={{
+        name: site.name,
+        description: site.description,
+        url: site.url,
+        email: site.email,
+      }}
+    />
   );
 }

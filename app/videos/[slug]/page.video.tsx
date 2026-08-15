@@ -4,11 +4,17 @@ import { notFound } from "next/navigation";
 import { Container } from "@/components/layout/container";
 import { DraftMark } from "@/components/content/marks";
 import { RelatedContent } from "@/components/content/related-content";
+import { EngagementPanel } from "@/components/content/engagement-panel";
 import { VideoEmbed } from "@/components/mdx/video-embed";
 import { getAllVideos, getVideo } from "@/lib/content/load";
 import { relatedContent } from "@/lib/content/related";
 import { formatDate } from "@/lib/content/derive";
 import { site } from "@/lib/site/config";
+
+// Only published videos get a page. `dynamicParams: false` makes that list
+// exhaustive, which is what a static export needs: no server is standing by to
+// render a slug that was not built.
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return getAllVideos().map((v) => ({ slug: v.slug }));
@@ -115,6 +121,9 @@ export default async function VideoPage({
           </aside>
         </div>
         <RelatedContent items={related} />
+        <div className="mx-auto max-w-3xl">
+          <EngagementPanel contentKey={`videos/${video.slug}`} title={video.title} />
+        </div>
       </article>
     </Container>
   );
