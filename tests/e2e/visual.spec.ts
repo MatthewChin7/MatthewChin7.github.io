@@ -11,6 +11,16 @@ async function settle(page: Page) {
   await page.evaluate(() => document.fonts.ready);
 }
 
+/**
+ * Keep the giscus iframe out of the frame. Its height depends on the network,
+ * on how many comments a thread has and on whether the reader is signed in —
+ * none of which is this site's layout. That it mounts at all is asserted in
+ * archive.spec.ts; here it would only make the baselines flap.
+ */
+async function blockComments(page: Page) {
+  await page.route("https://giscus.app/**", (route) => route.abort());
+}
+
 /** Pages that exist regardless of what has been published. */
 const shots: { name: string; path: string; theme?: "night" }[] = [
   { name: "home-day", path: "/" },
@@ -29,6 +39,7 @@ for (const shot of shots) {
     if (shot.theme) {
       await page.addInitScript((t) => localStorage.setItem("theme", t), shot.theme);
     }
+    await blockComments(page);
     await page.goto(shot.path);
     await settle(page);
     await expect(page).toHaveScreenshot(`${shot.name}.png`, {
@@ -53,6 +64,7 @@ const detailShots: { name: string; index: string; prefix: string }[] = [
 
 for (const shot of detailShots) {
   test(`visual: ${shot.name}`, async ({ page }) => {
+    await blockComments(page);
     await page.goto(shot.index);
     const first = page.locator(`a[href^="${shot.prefix}"]`).first();
     test.skip((await first.count()) === 0, `nothing published under ${shot.prefix}`);
@@ -67,6 +79,7 @@ for (const shot of detailShots) {
 
 test("visual: mobile menu", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile only");
+  await blockComments(page);
   await page.goto("/");
   await settle(page);
   await page.getByRole("button", { name: "Index" }).click();

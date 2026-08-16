@@ -20,11 +20,11 @@ For this site the backend is **the repository itself**. Content lives in
 studio does not need a server to write posts — it needs write access to the
 repo, which the GitHub API provides.
 
-| Data                                                          | Where it lives                                                                                                 | Cost      |
-| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | --------- |
-| **Content** (posts, problems, musings, portfolio, CV, images) | This git repo. The studio commits; the push redeploys.                                                         | free      |
-| **Comments**                                                  | Not wired. GitHub Discussions via Giscus is the natural fit — see [§6](#6-optional-comments-and-real-records). | free      |
-| **Likes / analytics / arbitrary records**                     | Not wired. Needs a real service (Supabase).                                                                    | free tier |
+| Data                                                          | Where it lives                                                                              | Cost      |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --------- |
+| **Content** (posts, problems, musings, portfolio, CV, images) | This git repo. The studio commits; the push redeploys.                                      | free      |
+| **Comments**                                                  | Live. GitHub Discussions via giscus — see [§6](#6-comments--github-discussions-via-giscus). | free      |
+| **Likes / analytics / arbitrary records**                     | Not wired. Needs a real service (Supabase).                                                 | free tier |
 
 ---
 
@@ -208,30 +208,37 @@ same as for content.
 Reactions on the thread replace the old Like button. They are counted per
 GitHub account, so the number means something.
 
-### What is already done
+### Live
 
-`site.comments` in `lib/site/config.ts` carries the repository and its
-`repoId` (`R_kgDOTdB8vg`, the repo's GraphQL node id). The component, the
-theme sync and the tests are in place. **The comment section does not render
-at all** until `categoryId` is filled in — a box that cannot store a comment
-is worse than no box.
+Discussions are enabled, the giscus app is installed, and `site.comments` in
+`lib/site/config.ts` carries all four values: the repository, its `repoId`
+(`R_kgDOTdB8vg`, the GraphQL node id), the category **Announcements** and its
+`categoryId`. Announcement format is what giscus recommends — only a
+maintainer and giscus itself can open a thread, readers reply.
 
-### The four steps only you can do
+Every post, project, musing, video and book review now carries a working
+thread. Threads are keyed by content id (`notes/<slug>`) rather than by URL,
+so renaming or moving a post keeps its comments.
+
+Verified against the live widget: the frame mounts with the reaction bar,
+comment box and GitHub sign-in, and the theme follows the site's day/night
+toggle (`themes/light.css` ⇄ `themes/transparent_dark.css`).
+
+`categoryId` is the load-bearing value. Blank it and the comment section
+renders nothing at all rather than an empty heading — a box that cannot store
+a comment is worse than no box.
+
+### If you ever need to redo it
 
 1. **Settings → General → Features → tick Discussions.**
-2. In the new **Discussions** tab, create a category called **Comments**.
-   Give it the **Announcement** format, so only you can start a thread and
-   readers can only reply — giscus creates the per-post threads itself.
-3. Install the **giscus app** on this repository:
-   <https://github.com/apps/giscus>.
-4. Open <https://giscus.app>, enter `MatthewChin7/MatthewChin7.github.io`,
-   pick the **Comments** category, and copy the `data-category-id` value out
-   of the generated snippet. Paste it into `categoryId` in
-   `lib/site/config.ts`, then commit.
-
-After the next deploy every post, project, musing, video and book review
-carries a working thread. Threads are keyed by content id (`notes/<slug>`),
-not by URL, so renaming or moving a post keeps its comments.
+2. Use a category with the **Announcement** format. The default
+   **Announcements** category is exactly that; a custom one works equally
+   well.
+3. Install the **giscus app**: <https://github.com/apps/giscus>.
+4. Open <https://giscus.app>, enter the repository, pick the category, and
+   copy `data-category-id` into `categoryId`. Only that one value is needed —
+   the rest of the generated snippet is ignored, since
+   `components/content/comments.tsx` builds its own script tag.
 
 ### What this costs you
 

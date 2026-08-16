@@ -36,9 +36,8 @@ export const site = {
   comments: {
     repo: "MatthewChin7/MatthewChin7.github.io",
     repoId: "R_kgDOTdB8vg",
-    category: "Comments",
-    // TODO(matthew): paste the category id from https://giscus.app
-    categoryId: "",
+    category: "Announcements",
+    categoryId: "DIC_kwDOTdB8vs4DDegV",
   },
 } as const;
 
